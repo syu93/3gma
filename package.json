@@ -24,6 +24,8 @@
     "vite": "^5.0.0"
   },
   "dependencies": {
+    "@types/page": "^1.11.9",
+    "firebase": "^10.6.0",
     "page": "^1.11.6"
   }
 }

@@ -1,7 +1,22 @@
-import page from 'page';
+import page, { Context } from 'page';
+import { auth, loginWithGoogle } from './firebase';
+import { onAuthStateChanged } from 'firebase/auth';
 
 const app = document.querySelector('#app');
 const router = app?.querySelector('#router');
+
+enum ROUTES {
+  HOME= '/',
+  EDITOR= '/editor/:projectId',
+  LOGIN='/login'
+};
+
+function hideAll() {
+  const pages = router?.querySelectorAll('[data-page]');
+  pages?.forEach(page => {
+    page.classList.add('hidden');
+  });
+}
 
 function displayPage(pageName: string): Element {
   const page = router?.querySelector(`[data-page="${pageName}"]`);
@@ -12,21 +27,42 @@ function displayPage(pageName: string): Element {
   return page;
 }
 
-page('*', (ctx, next) => {
-  const pages = router?.querySelectorAll('[data-page]');
-  pages?.forEach(page => {
-    page.classList.add('hidden');
-  });
+function setLoadingState(state: boolean) {
+  const loader = app?.querySelector('#loader');
+  if (state) {
+    loader?.classList.remove('hidden');
+  } else {
+    loader?.classList.add('hidden');
+  }
+}
 
+page('*', (ctx: Context, next) => {
+  setLoadingState(true);
+  hideAll();
+  onAuthStateChanged(auth, next);
+}, (ctx, next) => {
+  setLoadingState(false);
+  const user = auth.currentUser;
+
+  if (!user && ctx.path !== ROUTES.LOGIN) {
+    page(ROUTES.LOGIN);
+  }
+  // TODO redirect if on login page with a user
   next();
 });
 
-page('/', (ctx) => {
+page(ROUTES.HOME, (ctx) => {
   displayPage('home');
 });
 
-page('/login', (ctx) => {
-  displayPage('login');
+page(ROUTES.EDITOR, (ctx) => {
+  displayPage('editor');
+});
+
+page(ROUTES.LOGIN, (ctx) => {
+  const page = displayPage('login');
+  const loginButton = page.querySelector('form button');
+  loginButton?.addEventListener('click', loginWithGoogle);
 });
 
 page();
