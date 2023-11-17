@@ -1,6 +1,7 @@
 import page, { Context } from 'page';
 import { auth, loginWithGoogle } from './firebase';
 import { onAuthStateChanged } from 'firebase/auth';
+import { initEditor } from './editor';
 
 const app = document.querySelector('#app');
 const router = app?.querySelector('#router');
@@ -56,7 +57,8 @@ page(ROUTES.HOME, (ctx) => {
 });
 
 page(ROUTES.EDITOR, (ctx) => {
-  displayPage('editor');
+  const page = displayPage('editor');
+  initEditor(page);
 });
 
 page(ROUTES.LOGIN, (ctx) => {

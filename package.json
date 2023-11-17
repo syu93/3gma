@@ -26,6 +26,7 @@
   "dependencies": {
     "@types/page": "^1.11.9",
     "firebase": "^10.6.0",
-    "page": "^1.11.6"
+    "page": "^1.11.6",
+    "three": "^0.158.0"
   }
 }

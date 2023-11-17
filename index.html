@@ -81,9 +81,17 @@
     <main id="router">
       <section data-page="home">
         Home page
+
+        <a href="/editor/123456">Start create</a>
       </section>
       <section data-page="editor">
-        <aside>
+        <aside class="absolute top-0 flex flex-col">
+          <header class="sticky top-0 w-screen bg-orange-500">
+            <select class="addElement">
+              <option>🧙</option>
+              <option value="cube">Cube</option>
+            </select>
+          </header>
           <button>👋🏿</button>
         </aside>
       </section>
