@@ -12,7 +12,7 @@ enum ROUTES {
   LOGIN='/login'
 };
 
-function hideAll() {
+function hideAllPages() {
   const pages = router?.querySelectorAll('[data-page]');
   pages?.forEach(page => {
     page.classList.add('hidden');
@@ -30,16 +30,13 @@ function displayPage(pageName: string): Element {
 
 function setLoadingState(state: boolean) {
   const loader = app?.querySelector('#loader');
-  if (state) {
-    loader?.classList.remove('hidden');
-  } else {
-    loader?.classList.add('hidden');
-  }
+  const methodName = state ? 'remove' : 'add';
+  loader?.classList[methodName]('hidden');
 }
 
 page('*', (ctx: Context, next) => {
   setLoadingState(true);
-  hideAll();
+  hideAllPages();
   onAuthStateChanged(auth, next);
 }, (ctx, next) => {
   setLoadingState(false);
