@@ -1,179 +1,306 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
-import { ViewHelper } from 'three/examples/jsm/helpers/ViewHelper';
+import { TransformControls } from 'three/examples/jsm/controls/TransformControls.js';
 
 const scene = new THREE.Scene();
 const camera = initCamera();
-let viewHelper: ViewHelper;
+const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+const { transformControl } = initControls();
 
-const renderer = new THREE.WebGLRenderer({ antialias: true });
-renderer.setPixelRatio(window.devicePixelRatio);
-const orbitControls = new OrbitControls(camera, renderer.domElement);
-
-const mousePosition = {
-  x: 0,
-  y: 0
+let trackMouse = true;
+enum AVAILABLE_TOOLS {
+  'SELECT',
+  'ADD_SHAPE',
 };
 
-export function initEditor(container: Element) {
-  scene.background = new THREE.Color(0x1D1D1D);
-
-  renderer.setSize(window.innerWidth, window.innerHeight - 64);
-  container.appendChild(renderer.domElement);
-
-  addHelpers();
-  animate();
-
-  orbitControls.update();
-
-  window.addEventListener('resize', onWindowResize);
-  const selector = container?.querySelector('gma-dropdown');
-  selector?.addEventListener('shape-selected', ({ detail }) => createPhantomShape(detail));
+const TOOLS = {
+  shapeTool: {
+    selectedShape: 'cube',
+  }
 }
 
-export function initCamera() {
-  const camera = new THREE.PerspectiveCamera(50, window.innerWidth / (window.innerHeight - 64), 0.01, 1000);
-  camera.position.set(0, 10, 30);
+const EDITOR_STATE = {
+  transformControl,
+  scene,
+  camera,
+  renderer,
+  selectedTool: AVAILABLE_TOOLS.SELECT,
+  selectedObject: null as THREE.Object3D | null,
+  selectBox: undefined as unknown as THREE.BoxHelper,
+  preventSelection: false,
+  objects: [] as unknown[],
+};
+
+const PHANTOM_SHAPRES = initPhantomShpes();
+
+const mousePosition = { x: 0, y: 0 };
+
+export function initEditor(container: Element) {
+  // scene.background = new THREE.Color(0x1D1D1D);
+
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  container.querySelector('main')?.appendChild(renderer.domElement);
+  const aside = container.querySelector('aside');
+  animate();
+  addHelpers();
+
+  window.addEventListener('resize', onWindowResize);
+  addMenuListener(container);
+  initObjectSelection();
+
+  addCube(PHANTOM_SHAPRES['phantomCube']);
+}
+
+function initCamera() {
+  const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.01, 50000);
+  camera.position.z = 5;
 
   return camera;
 }
 
-export function animate() {
+function initControls() {
+  const orbitControl = new OrbitControls(camera, renderer.domElement);
+  orbitControl.enablePan = true;
+  orbitControl.update();
+
+  const transformControl = new TransformControls(camera, renderer.domElement);
+  transformControl.addEventListener('mouseDown', () => orbitControl.enabled = false);
+  transformControl.addEventListener('mouseUp', () => orbitControl.enabled = true);
+
+  // const controlButtons = document.querySelectorAll('aside button');
+  // // const canvas = document.querySelector('canvas');
+  // // controlButtons.forEach((button) => {
+  // //   switch(button.className) {
+  // //     case 'move':
+  // //       button.addEventListener('click', () => {
+  // //         canvas.dataset.mode = 'translate';
+  // //         transformControl.setMode('translate')}
+  // //       );
+  // //       break;
+  // //     case 'rotate':
+  // //       button.addEventListener('click', () => {
+  // //         canvas.dataset.mode = 'rotate';
+  // //         transformControl.setMode('rotate')}
+  // //       );
+  // //       break;
+  // //     case 'scale':
+  // //       button.addEventListener('click', () => {
+  // //         canvas.dataset.mode = 'scale';
+  // //         transformControl.setMode('scale')}
+  // //       );
+  // //       break;
+  // //   }
+  // });
+
+  scene.add(transformControl);
+  return { orbitControl, transformControl };
+}
+
+function animate() {
   requestAnimationFrame(animate);
-  // Prevent the renderer from clearing the buffers every frame.
-  // This is required for the view helper to work properly.
-  renderer.autoClear = false;
   renderer.render(scene, camera);
-  viewHelper.render(renderer);
 }
 
 function addHelpers() {
-  const grid = new THREE.Group();
-  scene.add(grid);
+  const group = new THREE.Group();
+  scene.add(group);
 
-  const grid1 = new THREE.GridHelper(30, 30, 0x3e3e3e);
-  grid1.material.color.setHex(0x3e3e3e);
-  grid1.material.vertexColors = false;
-  grid.add(grid1);
+  const gridSize = 300;
+  const gridColor = 0x3e3e3e;
+  const subGridColor = 0x888888;
 
-  const grid2 = new THREE.GridHelper(30, 6, 0x888888);
-  grid2.material.color.setHex(0x888888);
-  grid2.material.vertexColors = false;
-  grid.add(grid2);
+  const innerGrid = new THREE.GridHelper(gridSize, gridSize, gridColor);
+  innerGrid.material.color.setHex(gridColor);
+  innerGrid.material.vertexColors = false;
+  group.add(innerGrid);
 
-  const viewHelperElement = document.querySelector<HTMLElement>('.viewHelper');
-  if (viewHelperElement) {
-    viewHelperElement.style.position = 'absolute';
-    viewHelperElement.style.bottom = '0';
-    viewHelperElement.style.right = '0';
-    viewHelperElement.style.width = '8rem';
-    viewHelperElement.style.height = '8rem';
+  const outterGrid = new THREE.GridHelper(gridSize, gridSize / 5, subGridColor);
+  outterGrid.material.color.setHex(subGridColor);
+  outterGrid.material.vertexColors = false;
+  group.add(outterGrid);
 
-    viewHelper = new ViewHelper(camera, renderer.domElement);
+  // const axesHelper = new THREE.AxesHelper(50);
+  // group.add(axesHelper);
 
-    // viewHelperElement.addEventListener('pointerup', (event) => {
-    //   event.stopPropagation();
-    //   viewHelper.handleClick(event);
-    // });
-    // viewHelperElement.addEventListener('pointerdown', (event) => {
-    //   event.stopPropagation();
-    // });
+  const boxHelper = getSelectionBox();
+  scene.add(boxHelper);
+  EDITOR_STATE.selectBox = boxHelper;
+}
+
+function initObjectSelection() {
+  const onDownPosition = new THREE.Vector2();
+  const onUpPosition = new THREE.Vector2();
+
+  renderer.domElement.addEventListener('mousemove', (event) => {
+    const { x, y } = getNormilizedMousePosition(event);
+    mousePosition.x = x;
+    mousePosition.y = y;
+  });
+
+  renderer.domElement.addEventListener('mousedown', (event) => {
+    onDownPosition.set(mousePosition.x, mousePosition.y);
+  });
+  renderer.domElement.addEventListener('mouseup', () => {
+    onUpPosition.set(mousePosition.x, mousePosition.y);
+    if (onDownPosition.distanceTo(onUpPosition) >= 0.01) {
+      return;
+    }
+
+    const raycaster = new THREE.Raycaster();
+    raycaster.setFromCamera(mousePosition, camera);
+    const intersects = raycaster.intersectObjects(EDITOR_STATE.objects, false);
+    if (intersects.length > 0) {
+      selectObject(intersects[0].object);
+    } else {
+      unselectObject();
+    }
+  });
+}
+
+function selectObject(object: THREE.Object3D) {
+  EDITOR_STATE.selectedObject = object;
+  transformControl.attach(object);
+  if (EDITOR_STATE.selectBox) {
+    EDITOR_STATE.selectBox.setFromObject(object);
+    EDITOR_STATE.selectBox.position.copy(object.position);
+    EDITOR_STATE.selectBox.visible = true;
+    EDITOR_STATE.selectBox.update();
   }
+}
+
+function unselectObject() {
+  transformControl.detach();
+  EDITOR_STATE.selectBox.visible = false;
+  EDITOR_STATE.selectBox?.dispose();
+  EDITOR_STATE.selectedObject = null;
+}
+
+function getNormilizedMousePosition(event: MouseEvent) {
+  const canvas = renderer.domElement;
+  // Get the mouse coordinates in normalized device coordinates (-1 to 1)
+  const x = ((event.clientX - canvas.getBoundingClientRect().left) / canvas.clientWidth) * 2 - 1;
+  const y = -((event.clientY - (canvas.getBoundingClientRect().top)) / canvas.clientHeight) * 2 + 1;
+
+  return { x, y };
+}
+
+function getSelectionBox(): THREE.BoxHelper {
+  const box = new THREE.BoxHelper();
+  box.material.depthTest = false;
+  box.material.transparent = true;
+  box.name = 'selectBox';
+  box.visible = false;
+  return box;
+}
+
+function getStandardMaterial() {
+  const material = new THREE.MeshStandardMaterial();
+  return material;
 }
 
 function onWindowResize() {
   const w = window.innerWidth;
-  const h = window.innerHeight - 64;
+  const h = window.innerHeight;
 
   renderer.setSize(w, h);
   camera.aspect = w / h;
   camera.updateProjectionMatrix();
 }
 
-function addCube(phantomCube) {
-  const geometry = new THREE.BoxGeometry(1, 1, 1);
-  const material = new THREE.MeshBasicMaterial({ color: 0xcccccc });
-  const cube = new THREE.Mesh(geometry, material);
-
-  cube.position.copy(phantomCube.position.clone());
-  scene.add(cube);
-}
-
-function addSphere(phantomSphere) {
-  const geometry = new THREE.SphereGeometry(1, 32, 32);
-  const material = new THREE.MeshBasicMaterial({ color: 0xcccccc });
-  const sphere = new THREE.Mesh(geometry, material);
-
-  sphere.position.copy(phantomSphere.position.clone());
-  scene.add(sphere);
-}
-
-function addCylinder(phantomCylinder) {
-  const geometry = new THREE.CylinderGeometry(1, 1, 1, 32);
-  const material = new THREE.MeshBasicMaterial({ color: 0xcccccc });
-  const cylinder = new THREE.Mesh(geometry, material);
-
-  cylinder.position.copy(phantomCylinder.position.clone());
-  scene.add(cylinder);
-}
-
-function createPhantomShape(shape) {
-  const cubeGeometry = new THREE.BoxGeometry(1, 1, 1);
-  const sphereGeometry = new THREE.SphereGeometry(1, 32, 32);
-  const cylinderGeometry = new THREE.CylinderGeometry(1, 1, 1, 32);
-  const material = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
-
-  const phantomCube = new THREE.Mesh(cubeGeometry, material);
-  phantomCube.name = 'phantomCube';
-  const phantomSphere = new THREE.Mesh(sphereGeometry, material);
-  phantomSphere.name = 'phantomSphere';
-  const phantomCylinder = new THREE.Mesh(cylinderGeometry, material);
-  phantomCylinder.name = 'phantomCylinder';
-
-  const phantomObjects = [phantomCube, phantomSphere, phantomCylinder];
-
-  phantomObjects.forEach((phantomObject) => {
-    const object = scene.getObjectByName(phantomObject.name);
-    console.log(object);
-
-    if (object) {
-      scene.remove(object);
-    }
+function addMenuListener(container) {
+  container.querySelector('.selectTool')?.addEventListener('click', () => {
+    changeSelectedTool(AVAILABLE_TOOLS.SELECT);
+    removePhantomShape();
   });
 
-  let trackMouse = true;
+  container.querySelector('.addElement')
+    ?.addEventListener('change', ({ target: { value } }) => {
+      changeSelectedTool(AVAILABLE_TOOLS.ADD_SHAPE);
+
+      TOOLS.shapeTool.selectedShape = value;
+
+      createPhantomShape(TOOLS.shapeTool.selectedShape);
+    });
+
+  trackMouse = true;
   const currentMousePos = new THREE.Vector2(0, 0);
   renderer.domElement.addEventListener('mousedown', (e) => {
     trackMouse = false;
     currentMousePos.set(e.clientX, e.clientY);
   });
   renderer.domElement.addEventListener('mouseup', (event) => {
+    if (EDITOR_STATE.selectedTool !== AVAILABLE_TOOLS.ADD_SHAPE) return;
+
     trackMouse = true;
     if (currentMousePos.x === event.clientX && currentMousePos.y === event.clientY) {
-      switch (shape) {
+      switch (TOOLS.shapeTool.selectedShape) {
         case 'cube':
-          addCube(phantomCube);
+          addCube(PHANTOM_SHAPRES['phantomCube']);
           break;
         case 'sphere':
-          addSphere(phantomSphere);
+          addSphere(PHANTOM_SHAPRES['phantomSphere']);
           break;
         case 'cylinder':
-          addCylinder(phantomCylinder);
+          addCylinder(PHANTOM_SHAPRES['phantomCylinder']);
           break;
       }
     }
   });
+}
+
+function addCube(phantomCube) {
+  const geometry = new THREE.BoxGeometry(1, 1, 1);
+  const material = getStandardMaterial();
+  const cube = new THREE.Mesh(geometry, material);
+  cube.userData = { own: true };
+
+  cube.position.copy(phantomCube.position.clone());
+  EDITOR_STATE.objects.push(cube);
+  scene.add(cube);
+}
+
+function addSphere(phantomSphere) {
+  const geometry = new THREE.SphereGeometry(1, 32, 32);
+  const material = getStandardMaterial();
+  const sphere = new THREE.Mesh(geometry, material);
+  sphere.userData = { own: true };
+
+  sphere.position.copy(phantomSphere.position.clone());
+  EDITOR_STATE.objects.push(sphere);
+  scene.add(sphere);
+}
+
+function addCylinder(phantomCylinder) {
+  const geometry = new THREE.CylinderGeometry(1, 1, 1, 32);
+  const material = getStandardMaterial();
+  const cylinder = new THREE.Mesh(geometry, material);
+  cylinder.userData = { own: true };
+
+  cylinder.position.copy(phantomCylinder.position.clone());
+  scene.add(cylinder);
+}
+
+function removePhantomShape() {
+  Object.values(PHANTOM_SHAPRES).forEach((phantomObject) => {
+    const object = scene.getObjectByName(phantomObject.name);
+    if (object) {
+      scene.remove(object);
+    }
+  });
+}
+function createPhantomShape(shape) {
+  removePhantomShape();
 
   let selectedGeometry;
   switch (shape) {
     case 'cube':
-      selectedGeometry = phantomCube;
+      selectedGeometry = PHANTOM_SHAPRES['phantomCube'];
       break;
     case 'sphere':
-      selectedGeometry = phantomSphere;
+      selectedGeometry = PHANTOM_SHAPRES['phantomSphere'];
       break;
     case 'cylinder':
-      selectedGeometry = phantomCylinder;
+      selectedGeometry = PHANTOM_SHAPRES['phantomCylinder'];
       break;
   }
   if (selectedGeometry) {
@@ -222,4 +349,26 @@ function createPhantomShape(shape) {
       selectedGeometry.position.copy(pos);
     }
   }
+}
+
+function initPhantomShpes() {
+  const cubeGeometry = new THREE.BoxGeometry(1, 1, 1);
+  const sphereGeometry = new THREE.SphereGeometry(1, 32, 32);
+  const cylinderGeometry = new THREE.CylinderGeometry(1, 1, 1, 32);
+
+  const material = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
+
+  const phantomCube = new THREE.Mesh(cubeGeometry, material);
+  phantomCube.name = 'phantomCube';
+  const phantomSphere = new THREE.Mesh(sphereGeometry, material);
+  phantomSphere.name = 'phantomSphere';
+  const phantomCylinder = new THREE.Mesh(cylinderGeometry, material);
+  phantomCylinder.name = 'phantomCylinder';
+
+  return { phantomCube, phantomSphere, phantomCylinder };
+}
+
+function changeSelectedTool(tool) {
+  console.log('changeSelectedTool', tool);
+  EDITOR_STATE.selectedTool = tool;
 }
