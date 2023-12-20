@@ -98,6 +98,8 @@ function initControls() {
 
 function animate() {
   requestAnimationFrame(animate);
+  if (EDITOR_STATE.selectedObject)
+    EDITOR_STATE.selectBox.setFromObject(EDITOR_STATE.selectedObject);
   renderer.render(scene, camera);
 }
 
