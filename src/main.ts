@@ -2,17 +2,19 @@ import page, { Context } from 'page';
 import { auth, loginWithGoogle } from './firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import { initEditor } from './editor';
+import './components/3gma-dropdown';
 
 const app = document.querySelector('#app');
 const router = app?.querySelector('#router');
 
 enum ROUTES {
-  HOME= '/',
-  EDITOR= '/editor/:projectId',
-  LOGIN='/login'
+  HOME = '/',
+  EDITOR = '/editor/:projectId',
+  LOGIN = '/login'
 };
 
 function hideAllPages() {
+  router?.classList.remove('hidden');
   const pages = router?.querySelectorAll('[data-page]');
   pages?.forEach(page => {
     page.classList.add('hidden');
@@ -34,9 +36,12 @@ function setLoadingState(state: boolean) {
   loader?.classList[methodName]('hidden');
 }
 
-page('*', (ctx: Context, next) => {
+page('*', async (ctx: Context, next) => {
   setLoadingState(true);
   hideAllPages();
+  // Make a sleep of 2s
+  // await new Promise((resolve) => setTimeout(resolve, 2000));
+
   onAuthStateChanged(auth, next);
 }, (ctx, next) => {
   setLoadingState(false);
