@@ -1,8 +1,9 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
-import { TransformControls } from 'three/examples/jsm/controls/TransformControls.js';
+import { TransformControls } from 'three/examples/jsm/controls/TransformControls';
+import { ViewHelper } from 'three/examples/jsm/helpers/ViewHelper';
 
-const scene = new THREE.Scene();
+const scene = new THREE.Scene(); ``
 const camera = initCamera();
 const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
 const { transformControl } = initControls();
@@ -27,8 +28,9 @@ const EDITOR_STATE = {
   selectedTool: AVAILABLE_TOOLS.SELECT,
   selectedObject: null as THREE.Object3D | null,
   selectBox: undefined as unknown as THREE.BoxHelper,
-  preventSelection: false,
-  objects: [] as unknown[],
+  viewHelper: undefined as unknown as ViewHelper,
+  objects: [] as THREE.Object3D[],
+  clock: undefined as unknown as THREE.Clock,
 };
 
 const PHANTOM_SHAPRES = initPhantomShpes();
@@ -41,6 +43,7 @@ export function initEditor(container: Element) {
   renderer.setSize(window.innerWidth, window.innerHeight);
   container.querySelector('main')?.appendChild(renderer.domElement);
   const aside = container.querySelector('aside');
+  EDITOR_STATE.clock = new THREE.Clock();
   animate();
   addHelpers();
 
@@ -97,9 +100,18 @@ function initControls() {
 }
 
 function animate() {
+  const delta = EDITOR_STATE.clock.getDelta();
   requestAnimationFrame(animate);
-  if (EDITOR_STATE.selectedObject)
+  if (EDITOR_STATE.selectedObject) {
     EDITOR_STATE.selectBox.setFromObject(EDITOR_STATE.selectedObject);
+  }
+  if (EDITOR_STATE.viewHelper) {
+    EDITOR_STATE.viewHelper.render(renderer);
+    if (EDITOR_STATE.viewHelper.animating === true) {
+      EDITOR_STATE.viewHelper.update(delta);
+    }
+  }
+  renderer.autoClear = false;
   renderer.render(scene, camera);
 }
 
@@ -121,12 +133,30 @@ function addHelpers() {
   outterGrid.material.vertexColors = false;
   group.add(outterGrid);
 
-  // const axesHelper = new THREE.AxesHelper(50);
-  // group.add(axesHelper);
+  const axesHelper = new THREE.AxesHelper(50);
+  group.add(axesHelper);
 
   const boxHelper = getSelectionBox();
   scene.add(boxHelper);
   EDITOR_STATE.selectBox = boxHelper;
+
+  const viewHelperElement = document.querySelector<HTMLElement>('.viewHelper');
+  if (viewHelperElement) {
+    viewHelperElement.style.position = 'absolute';
+    viewHelperElement.style.bottom = '0';
+    viewHelperElement.style.right = '0';
+    viewHelperElement.style.width = '8rem';
+    viewHelperElement.style.height = '8rem';
+    EDITOR_STATE.viewHelper = new ViewHelper(camera, renderer.domElement);
+    EDITOR_STATE.viewHelper.animating = false;
+    viewHelperElement.addEventListener('pointerup', (event) => {
+      event.stopPropagation();
+      EDITOR_STATE.viewHelper.handleClick(event);
+    });
+    viewHelperElement.addEventListener('pointerdown', (event) => {
+      event.stopPropagation();
+    });
+  }
 }
 
 function initObjectSelection() {

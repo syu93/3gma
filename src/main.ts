@@ -39,9 +39,6 @@ function setLoadingState(state: boolean) {
 page('*', async (ctx: Context, next) => {
   setLoadingState(true);
   hideAllPages();
-  // Make a sleep of 2s
-  // await new Promise((resolve) => setTimeout(resolve, 2000));
-
   onAuthStateChanged(auth, next);
 }, (ctx, next) => {
   setLoadingState(false);
