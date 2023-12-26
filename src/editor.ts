@@ -161,6 +161,11 @@ function addHelpers() {
 }
 
 function initMenu(container: Element) {
+  const menuToggle = container.querySelector('menu hr');
+  menuToggle?.addEventListener('click', () => {
+    container.querySelector('menu')?.classList.toggle('colapsed');
+  });
+
   const menuCtn = container.querySelector('menu ul');
   MENU.forEach((menu) => {
     const item = createMenuItem(menu);
