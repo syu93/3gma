@@ -1,4 +1,7 @@
+import * as THREE from 'three';
+import { addCube, addSphere, addCylinder } from "./shape";
 import { EDITOR_STATE } from "./state";
+import { updateSceneContent } from './sceneExplorer.sidebare';
 
 export enum AVAILABLE_TOOLS {
   SELECT = 'SELECT',
@@ -32,7 +35,7 @@ const ARROW_ICON = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
 
 export const MENU = [
   { type: 'button', tool: AVAILABLE_TOOLS.SELECT, icon: TOOL_ICONS.SELECT, action: () => { } },
-  { type: 'select', tool: AVAILABLE_TOOLS.ADD_SHAPE, icon: SHAPE_ICON[AVAILABLE_SHAPES.CUBE], options: Object.values(AVAILABLE_SHAPES), action: () => console.log('add chape', EDITOR_STATE.selectedShape) },
+  { type: 'select', tool: AVAILABLE_TOOLS.ADD_SHAPE, icon: SHAPE_ICON[AVAILABLE_SHAPES.CUBE], options: Object.values(AVAILABLE_SHAPES), action: addShape },
   { type: 'button', tool: AVAILABLE_TOOLS.MOVE, icon: TOOL_ICONS.MOVE, action: setTransformControlMode },
   { type: 'button', tool: AVAILABLE_TOOLS.ROTATE, icon: TOOL_ICONS.ROTATE, action: setTransformControlMode },
   { type: 'button', tool: AVAILABLE_TOOLS.SCALE, icon: TOOL_ICONS.SCALE, action: setTransformControlMode },
@@ -184,4 +187,19 @@ function changeSelectedShape(container) {
 
 function getMenuCointainer() {
   return EDITOR_STATE.container.querySelector('menu ul');
+}
+
+function addShape() {
+  switch (EDITOR_STATE.selectedShape) {
+    case AVAILABLE_SHAPES.CUBE:
+      addCube(null);
+      break;
+    case AVAILABLE_SHAPES.SPHERE:
+      addSphere(null);
+      break;
+    case AVAILABLE_SHAPES.CYLINDER:
+      addCylinder(null);
+      break;
+  }
+  updateSceneContent();
 }

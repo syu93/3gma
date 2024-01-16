@@ -2,14 +2,19 @@ import * as THREE from 'three';
 import { ViewHelper } from "three/examples/jsm/helpers/ViewHelper";
 import { AVAILABLE_TOOLS } from "./menu";
 import { EDITOR_STATE } from "./state";
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
+import { TransformControls } from 'three/examples/jsm/controls/TransformControls';
 
 export const mousePosition = { x: 0, y: 0 };
 
+export const HELPER_GROUP_NAME = 'helpers';
+
 export function addHelpers() {
   const group = new THREE.Group();
+  group.name = HELPER_GROUP_NAME;
   EDITOR_STATE.scene.add(group);
 
-  const gridSize = 300;
+  const gridSize = 3000;
   const gridColor = 0x3e3e3e;
   const subGridColor = 0x888888;
 
@@ -27,7 +32,7 @@ export function addHelpers() {
   group.add(axesHelper);
 
   const boxHelper = getSelectionBox();
-  EDITOR_STATE.scene.add(boxHelper);
+  group.add(boxHelper);
   EDITOR_STATE.selectBox = boxHelper;
 
   const viewHelperElement = document.querySelector<HTMLElement>('.viewHelper');
@@ -47,6 +52,10 @@ export function addHelpers() {
       event.stopPropagation();
     });
   }
+
+  const { transformControl } = initControls();
+  group.add(transformControl);
+  EDITOR_STATE.transformControl = transformControl;
 }
 
 export function initObjectSelection() {
@@ -99,11 +108,24 @@ function unselectObject() {
   EDITOR_STATE.selectedObject = null;
 }
 
-function getNormilizedMousePosition(event: MouseEvent) {
+export function getNormilizedMousePosition(event: MouseEvent) {
   const canvas = EDITOR_STATE.renderer.domElement;
+  const rect = canvas.getBoundingClientRect();
+
   // Get the mouse coordinates in normalized device coordinates (-1 to 1)
-  const x = ((event.clientX - canvas.getBoundingClientRect().left) / canvas.clientWidth) * 2 - 1;
-  const y = -((event.clientY - (canvas.getBoundingClientRect().top)) / canvas.clientHeight) * 2 + 1;
+  const x = (event.clientX - rect.left) / canvas.width * 2 - 1;
+  const y = -(event.clientY - rect.top) / canvas.height * 2 + 1;
+
+  return { x, y };
+}
+
+export function getMousePosition(event: MouseEvent) {
+  const canvas = EDITOR_STATE.renderer.domElement;
+  const rect = canvas.getBoundingClientRect();
+
+  // Get the mouse coordinates in normalized device coordinates (-1 to 1)
+  const x = (event.clientX - rect.left);
+  const y = -(event.clientY - rect.top);
 
   return { x, y };
 }
@@ -115,4 +137,15 @@ function getSelectionBox(): THREE.BoxHelper {
   box.name = 'selectBox';
   box.visible = false;
   return box;
+}
+
+function initControls() {
+  const orbitControl = new OrbitControls(EDITOR_STATE.camera, EDITOR_STATE.renderer.domElement);
+  orbitControl.enablePan = true;
+  orbitControl.update();
+
+  const transformControl = new TransformControls(EDITOR_STATE.camera, EDITOR_STATE.renderer.domElement);
+  transformControl.addEventListener('mouseDown', () => orbitControl.enabled = false);
+  transformControl.addEventListener('mouseUp', () => orbitControl.enabled = true);
+  return { orbitControl, transformControl };
 }
