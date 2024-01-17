@@ -80,7 +80,7 @@ export function initObjectSelection() {
     const raycaster = new THREE.Raycaster();
     raycaster.setFromCamera(mousePosition, EDITOR_STATE.camera);
     const intersects = raycaster.intersectObjects(EDITOR_STATE.objects, false);
-    if (intersects.length > 0) {
+    if (intersects.length > 0 && intersects[0].object.visible) {
       selectObject(intersects[0].object);
     } else {
       unselectObject();
