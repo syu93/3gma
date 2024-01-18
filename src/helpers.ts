@@ -4,8 +4,9 @@ import { AVAILABLE_TOOLS } from "./menu";
 import { EDITOR_STATE } from "./state";
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import { TransformControls } from 'three/examples/jsm/controls/TransformControls';
+import { EditorObject, selectItemInList, unselectItemInList } from './sceneExplorer.sidebare';
 
-export const mousePosition = { x: 0, y: 0 };
+export const mousePosition = new THREE.Vector2(0, 0);
 
 export const HELPER_GROUP_NAME = 'helpers';
 
@@ -88,7 +89,7 @@ export function initObjectSelection() {
   });
 }
 
-function selectObject(object: THREE.Object3D) {
+export function selectObject(object: THREE.Object3D) {
   EDITOR_STATE.selectedObject = object;
   if ([AVAILABLE_TOOLS.MOVE, AVAILABLE_TOOLS.ROTATE, AVAILABLE_TOOLS.SCALE].includes(EDITOR_STATE.selectedTool)) {
     EDITOR_STATE.transformControl.attach(object);
@@ -98,14 +99,16 @@ function selectObject(object: THREE.Object3D) {
     EDITOR_STATE.selectBox.position.copy(object.position);
     EDITOR_STATE.selectBox.visible = true;
     EDITOR_STATE.selectBox.update();
+    selectItemInList(object as EditorObject);
   }
 }
 
-function unselectObject() {
+export function unselectObject() {
   EDITOR_STATE.transformControl.detach();
   EDITOR_STATE.selectBox.visible = false;
   EDITOR_STATE.selectBox?.dispose();
   EDITOR_STATE.selectedObject = null;
+  unselectItemInList();
 }
 
 export function getNormilizedMousePosition(event: MouseEvent) {
@@ -131,6 +134,7 @@ export function getMousePosition(event: MouseEvent) {
 }
 
 function getSelectionBox(): THREE.BoxHelper {
+  // @ts-ignore
   const box = new THREE.BoxHelper();
   box.material.depthTest = false;
   box.material.transparent = true;

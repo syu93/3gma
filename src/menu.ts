@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { addCube, addSphere, addCylinder } from "./shape";
 import { EDITOR_STATE } from "./state";
 import { updateSceneContent } from './sceneExplorer.sidebare';
+import { selectObject } from './helpers';
 
 export enum AVAILABLE_TOOLS {
   SELECT = 'SELECT',
@@ -190,16 +191,18 @@ function getMenuCointainer() {
 }
 
 function addShape() {
+  let selectedGeometry;
   switch (EDITOR_STATE.selectedShape) {
     case AVAILABLE_SHAPES.CUBE:
-      addCube(null);
+      selectedGeometry = addCube(null);
       break;
     case AVAILABLE_SHAPES.SPHERE:
-      addSphere(null);
+      selectedGeometry = addSphere(null);
       break;
     case AVAILABLE_SHAPES.CYLINDER:
-      addCylinder(null);
+      selectedGeometry = addCylinder(null);
       break;
   }
   updateSceneContent();
+  selectObject(selectedGeometry);
 }

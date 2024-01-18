@@ -1,9 +1,12 @@
 import * as THREE from "three";
 import { EDITOR_STATE } from "./state";
-import { HELPER_GROUP_NAME } from "./helpers";
+import { HELPER_GROUP_NAME, selectObject, unselectObject } from "./helpers";
 import { SHAPE_ICON } from "./menu";
 
-type EditorObject = THREE.Mesh<THREE.BufferGeometry, THREE.Material>;
+export type EditorObject = THREE.Mesh<THREE.BufferGeometry, THREE.Material>;
+
+const SIDEBAR_MIN_WIDTH = 10 * 16;
+const SIDEBAR_MAX_WIDTH = 20 * 16;
 
 export enum EYE_ICONS {
   VISIBLE = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="M2 12s3-7 10-7s10 7 10 7s-3 7-10 7s-10-7-10-7"/><circle cx="12" cy="12" r="3"/></g></svg>',
@@ -40,20 +43,36 @@ export function getSidebarWidth(container: Element): number {
 
 export function updateSceneContent() {
   const sidebare = EDITOR_STATE.container?.querySelector('#sceneExplorer') as HTMLElement;
-  const sceneList = sidebare.querySelector('ul');
+  EDITOR_STATE.sceneList = sidebare.querySelector('ul') as Element;
 
-  if (sceneList) {
-    sceneList.innerHTML = '';
+  if (EDITOR_STATE.sceneList) {
+    EDITOR_STATE.sceneList.innerHTML = '';
     EDITOR_STATE.scene.children
       .filter((item) => item.name !== HELPER_GROUP_NAME)
       .forEach((item) => {
-        sceneList.appendChild(createSceneItem(item as EditorObject));
+        EDITOR_STATE.sceneList.appendChild(createSceneItem(item as EditorObject));
       });
+  }
+}
+
+export function selectItemInList(object: EditorObject) {
+  unselectItemInList();
+  const item = EDITOR_STATE.sceneList?.querySelector(`[data-id="${object.uuid}"]`);
+  item?.classList.add('selected');
+
+  item?.scrollIntoView({ behavior: 'smooth' });
+}
+
+export function unselectItemInList() {
+  const selected = EDITOR_STATE.sceneList?.querySelector('.selected');
+  if (selected) {
+    selected.classList.remove('selected');
   }
 }
 
 function createSceneItem(object: EditorObject) {
   const item = document.createElement('li');
+  item.dataset.id = object.uuid;
   const { name, icon } = getNameAndIcon(object);
 
   const iconContainer = createIconContainer(icon);
@@ -64,6 +83,8 @@ function createSceneItem(object: EditorObject) {
   item.appendChild(nameContainer);
   item.appendChild(displayMode);
   item.addEventListener('click', () => {
+    selectObject(object);
+    selectItemInList(object)
   });
   return item;
 }
@@ -90,13 +111,14 @@ function createDisplayModeContainer(object: EditorObject) {
     e.stopPropagation();
     object.visible = !object.visible;
     eyeContainer.innerHTML = object.visible ? EYE_ICONS.VISIBLE : EYE_ICONS.HIDDEN;
+    unselectObject();
   });
   return eyeContainer;
 }
 
 function resize(leftPanel: HTMLElement, e: MouseEvent) {
   const dx = e.x;
-  if (dx >= 20 * 16 || dx <= 15 * 16) return;
+  if (dx >= SIDEBAR_MAX_WIDTH || dx <= SIDEBAR_MIN_WIDTH) return;
   leftPanel.style.width = dx + "px";
 
   const editorWidth = window.innerWidth - dx;

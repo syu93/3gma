@@ -7,32 +7,35 @@ export function addCube(phantomCube) {
   const geometry = new THREE.BoxGeometry(1, 1, 1);
   const material = getStandardMaterial();
   const cube = new THREE.Mesh(geometry, material);
-  cube.userData = { own: true };
 
   // cube.position.copy(phantomCube.position.clone());
   EDITOR_STATE.objects.push(cube);
   EDITOR_STATE.scene.add(cube);
+
+  return cube;
 }
 
 export function addSphere(phantomSphere) {
   const geometry = new THREE.SphereGeometry(1, 32, 32);
   const material = getStandardMaterial();
   const sphere = new THREE.Mesh(geometry, material);
-  sphere.userData = { own: true };
 
   // sphere.position.copy(phantomSphere.position.clone());
   EDITOR_STATE.objects.push(sphere);
   EDITOR_STATE.scene.add(sphere);
+
+  return sphere;
 }
 
 export function addCylinder(phantomCylinder) {
   const geometry = new THREE.CylinderGeometry(1, 1, 1, 32);
   const material = getStandardMaterial();
   const cylinder = new THREE.Mesh(geometry, material);
-  cylinder.userData = { own: true };
 
   // cylinder.position.copy(phantomCylinder.position.clone());
   EDITOR_STATE.scene.add(cylinder);
+
+  return cylinder;
 }
 
 export function initPhantomShpes() {

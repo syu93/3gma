@@ -15,6 +15,7 @@ export const EDITOR_STATE = new Proxy(({
   objects: [] as THREE.Object3D[],
   clock: undefined as unknown as THREE.Clock,
   container: undefined as unknown as Element,
+  sceneList: undefined as unknown as Element,
 }), {
   set: (target, key, value) => {
     target[key] = value;
