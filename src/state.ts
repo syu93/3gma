@@ -1,9 +1,11 @@
 import { ViewHelper } from "three/examples/jsm/helpers/ViewHelper";
 import { AVAILABLE_SHAPES, AVAILABLE_TOOLS } from "./menu";
 import { TransformControls } from "three/examples/jsm/controls/TransformControls";
+import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 
 export const EDITOR_STATE = new Proxy(({
   transformControl: undefined as unknown as TransformControls,
+  orbitControl: undefined as unknown as OrbitControls,
   scene: undefined as unknown as THREE.Scene,
   camera: undefined as unknown as THREE.PerspectiveCamera,
   renderer: undefined as unknown as THREE.WebGLRenderer,
@@ -11,6 +13,7 @@ export const EDITOR_STATE = new Proxy(({
   selectedShape: AVAILABLE_SHAPES.CUBE,
   selectedObject: null as THREE.Object3D | null,
   selectBox: undefined as unknown as THREE.BoxHelper,
+  pointerTarget: undefined as unknown as THREE.Object3D,
   viewHelper: undefined as unknown as ViewHelper,
   objects: [] as THREE.Object3D[],
   clock: undefined as unknown as THREE.Clock,

@@ -2,7 +2,7 @@ canvas {
   --canvar-radius: 2vw;
   border-top-left-radius: var(--canvar-radius);
   border-bottom-left-radius: var(--canvar-radius);
-  box-shadow: 0px -2rem 0 0 #374151;
+  box-shadow: 0px calc(var(--canvar-radius) * -1) 0 0 #374151;
 }
 
 menu ul>li {
@@ -28,10 +28,10 @@ menu.colapsed {
 #sceneExplorer .resize {
   @apply bg-gray-600;
   position: absolute;
-  top: 1.5rem;
+  top: 3vh;
   right: -2px;
   width: 2px;
-  height: calc(100vh - 1.5rem);
+  height: 97vh;
   cursor: ew-resize;
   user-select: none;
 }
@@ -41,7 +41,7 @@ menu.colapsed {
 }
 
 #sceneExplorer ul li {
-  @apply flex items-center gap-2 px-2 py-1 cursor-pointer rounded-sm hover:bg-gray-600 hover:ring ring-gray-600;
+  @apply flex items-center gap-2 px-2 py-1 cursor-pointer rounded-sm select-none hover:bg-gray-600 hover:ring ring-gray-600;
 }
 
 #sceneExplorer ul li.selected {

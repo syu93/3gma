@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import { EDITOR_STATE } from "./state";
-import { getMousePosition, getNormilizedMousePosition } from "./helpers";
+import { get3DMousePosition, getMousePosition, getNormilizedMousePosition } from "./helpers";
 import { TransformControlsPlane } from "three/examples/jsm/controls/TransformControls";
 
 export function addCube(phantomCube) {
@@ -134,59 +134,43 @@ function createPhantomShape(shape) {
   }
 }
 
-export function createGridShape() {
+export function createTargetShape() {
   const group = new THREE.Group();
+  // Circle parameters
+  const circleRadius = 3;
+  const circleSegments = 64;
 
-  const size = 1;
-  const step = 0.5;
+  // Create circle boundary
+  const circleGeometry = new THREE.CircleGeometry(circleRadius, circleSegments);
+  circleGeometry.rotateX(Math.PI / 2);
+  const circleMaterial = new THREE.MeshBasicMaterial({ color: 0xFFF000, side: THREE.DoubleSide, wireframe: true, transparent: true, opacity: 0.08 });
+  const circle = new THREE.Mesh(circleGeometry, circleMaterial);
+  group.add(circle);
 
-  // Line materials
-  const material = new THREE.LineBasicMaterial({ color: 0xFFFFFF });
-  const centerMaterial = new THREE.LineBasicMaterial({ color: 0xFFF000, linewidth: 2 }); // Red and thicker for center lines
+  let distance = EDITOR_STATE.orbitControl.getDistance();
+  EDITOR_STATE.orbitControl.addEventListener('change', () => {
+    const delta = distance / EDITOR_STATE.orbitControl.getDistance();
+    const zoom = Math.round(delta * 1e4) / 1e4;
+    const scaleFactor = 1 / zoom
 
-  // Create lines for the grid
-  for (let i = -size; i <= size; i += step) {
-    // Determine if it's a center line
-    let isCenterLine = (i === 0);
+    group.scale.set(scaleFactor, 0, scaleFactor);
+  });
 
-    // Vertical line
-    const geometryV = new THREE.BufferGeometry().setFromPoints([
-      new THREE.Vector3(-size, 0, i),
-      new THREE.Vector3(size, 0, i)
-    ]);
-    const lineV = new THREE.Line(geometryV, isCenterLine ? centerMaterial : material);
-    group.add(lineV);
+  group.visible = true;
 
-    // Horizontal line
-    const geometryH = new THREE.BufferGeometry().setFromPoints([
-      new THREE.Vector3(i, 0, -size),
-      new THREE.Vector3(i, 0, size)
-    ]);
-    const lineH = new THREE.Line(geometryH, isCenterLine ? centerMaterial : material);
-    group.add(lineH);
-  }
-
-  addListener(group);
   return group;
 }
 
-function addListener(object: THREE.Object3D) {
+export function addTargetTracking() {
+  document.addEventListener('mousemove', trackMouse);
+}
 
-  window.addEventListener('pointermove', (event) => {
-    const { x, y } = getNormilizedMousePosition(event);
+export function removeTargetTracking() {
+  document.removeEventListener('mousemove', trackMouse);
+}
 
-    const pointer = new THREE.Vector3(x, 0, y);
-
-    const distance = EDITOR_STATE.camera.position.clone().sub(pointer); // Note: depending on the order of subtracting, you'll get either forward or backward direction
-    console.log("x: ", distance.x, "z: ", distance.z);
-
-    // const offset = distance.sub(direction);
-    // console.log(offset);
-
-
-    // object.position.x = x * VALUE;
-    // object.position.z = -y * VALUE;
-  });
+function trackMouse(event) {
+  EDITOR_STATE.pointerTarget.position.copy(get3DMousePosition(event))
 }
 
 function intersectObjectWithRay(object, raycaster, includeInvisible) {

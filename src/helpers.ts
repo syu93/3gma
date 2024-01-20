@@ -5,8 +5,11 @@ import { EDITOR_STATE } from "./state";
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import { TransformControls } from 'three/examples/jsm/controls/TransformControls';
 import { EditorObject, selectItemInList, unselectItemInList } from './sceneExplorer.sidebare';
+import { addTargetTracking, createTargetShape } from './shape';
 
-export const mousePosition = new THREE.Vector2(0, 0);
+export const targetPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+const mousePosition = new THREE.Vector2(0, 0);
+const raycaster = new THREE.Raycaster();
 
 export const HELPER_GROUP_NAME = 'helpers';
 
@@ -54,9 +57,15 @@ export function addHelpers() {
     });
   }
 
-  const { transformControl } = initControls();
+  const { orbitControl, transformControl } = initControls();
   group.add(transformControl);
+  EDITOR_STATE.orbitControl = orbitControl;
   EDITOR_STATE.transformControl = transformControl;
+
+  EDITOR_STATE.pointerTarget = createTargetShape();
+  group.add(EDITOR_STATE.pointerTarget);
+
+  addTargetTracking();
 }
 
 export function initObjectSelection() {
@@ -111,13 +120,13 @@ export function unselectObject() {
   unselectItemInList();
 }
 
-export function getNormilizedMousePosition(event: MouseEvent) {
+export function getNormilizedMousePosition(event: MouseEvent): { x: number, y: number } {
   const canvas = EDITOR_STATE.renderer.domElement;
   const rect = canvas.getBoundingClientRect();
 
   // Get the mouse coordinates in normalized device coordinates (-1 to 1)
-  const x = (event.clientX - rect.left) / canvas.width * 2 - 1;
-  const y = -(event.clientY - rect.top) / canvas.height * 2 + 1;
+  const x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+  const y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
 
   return { x, y };
 }
@@ -127,10 +136,20 @@ export function getMousePosition(event: MouseEvent) {
   const rect = canvas.getBoundingClientRect();
 
   // Get the mouse coordinates in normalized device coordinates (-1 to 1)
-  const x = (event.clientX - rect.left);
-  const y = -(event.clientY - rect.top);
+  const x = (event.clientX - rect.left) / rect.width;
+  const y = -(event.clientY - rect.top) / rect.height;
 
   return { x, y };
+}
+
+export function get3DMousePosition(event): THREE.Vector3 {
+  const { x, y } = getNormilizedMousePosition(event);
+  mousePosition.x = x;
+  mousePosition.y = y;
+  raycaster.setFromCamera(mousePosition, EDITOR_STATE.camera);
+  const targetPoint = new THREE.Vector3();
+  raycaster.ray.intersectPlane(targetPlane, targetPoint);
+  return targetPoint;
 }
 
 function getSelectionBox(): THREE.BoxHelper {

@@ -1,11 +1,8 @@
 import * as THREE from 'three';
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
-import { TransformControls } from 'three/examples/jsm/controls/TransformControls';
-import { ViewHelper } from 'three/examples/jsm/helpers/ViewHelper';
 import { EDITOR_STATE } from './state';
 import { addHelpers, initObjectSelection } from './helpers';
-import { AVAILABLE_TOOLS, setSelectedTool, initMenu } from './menu';
-import { addCube, createGridShape, initPhantomShpes, removePhantomShape } from './shape';
+import { initMenu } from './menu';
+import { createTargetShape, initPhantomShpes } from './shape';
 import { getSidebarWidth, initSceneExplorer, updateSceneContent } from './sceneExplorer.sidebare';
 
 const PHANTOM_SHAPRES = initPhantomShpes();
@@ -31,18 +28,8 @@ export function initEditor(container: Element) {
   addHelpers();
   initSceneExplorer(container);
 
-  addCube(PHANTOM_SHAPRES['phantomCube']);
-  addCube(PHANTOM_SHAPRES['phantomCube']);
-  addCube(PHANTOM_SHAPRES['phantomCube']);
-  addCube(PHANTOM_SHAPRES['phantomCube']);
-
   updateSceneContent();
   window.addEventListener('resize', onWindowResize);
-
-  // const phantomGrid = createGridShape();
-  // phantomGrid.position.z = -1000;
-  // scene.add(phantomGrid);
-
 
   const fogColor = new THREE.Color(0x27272a);
   EDITOR_STATE.scene.fog = new THREE.FogExp2(fogColor, 0.01);
@@ -53,6 +40,7 @@ function initCamera(editorWidth) {
   camera.position.z = 20;
   camera.position.x = 5;
   camera.position.y = 10;
+  camera.lookAt(EDITOR_STATE.scene.position);
 
   return camera;
 }
