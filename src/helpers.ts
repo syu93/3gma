@@ -92,7 +92,8 @@ export function initObjectSelection() {
     const intersects = raycaster.intersectObjects(EDITOR_STATE.objects, false);
     if (intersects.length > 0 && intersects[0].object.visible) {
       selectObject(intersects[0].object);
-    } else {
+    } else if (!EDITOR_STATE.pointerTarget.userData.enabled) {
+      // @FIXME: prevent unselect when add a new object
       unselectObject();
     }
   });

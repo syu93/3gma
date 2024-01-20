@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { EDITOR_STATE } from './state';
 import { addHelpers, initObjectSelection } from './helpers';
 import { initMenu } from './menu';
-import { createTargetShape, initPhantomShpes } from './shape';
+import { initPhantomShpes } from './shape';
 import { getSidebarWidth, initSceneExplorer, updateSceneContent } from './sceneExplorer.sidebare';
 
 const PHANTOM_SHAPRES = initPhantomShpes();

@@ -1,8 +1,5 @@
-import * as THREE from 'three';
-import { addCube, addSphere, addCylinder } from "./shape";
+import { addShape, SHAPE_ICON, AVAILABLE_SHAPES } from "./shape";
 import { EDITOR_STATE } from "./state";
-import { updateSceneContent } from './sceneExplorer.sidebare';
-import { selectObject } from './helpers';
 
 export enum AVAILABLE_TOOLS {
   SELECT = 'SELECT',
@@ -10,18 +7,6 @@ export enum AVAILABLE_TOOLS {
   MOVE = 'MOVE',
   ROTATE = 'ROTATE',
   SCALE = 'SCALE',
-};
-
-export enum AVAILABLE_SHAPES {
-  CUBE = 'CUBE',
-  SPHERE = 'SPHERE',
-  CYLINDER = 'CYLINDER',
-};
-
-export enum SHAPE_ICON {
-  CUBE = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><path fill="currentColor" d="m28.504 8.136l-12-7a1 1 0 0 0-1.008 0l-12 7A1 1 0 0 0 3 9v14a1 1 0 0 0 .496.864l12 7a1 1 0 0 0 1.008 0l12-7A1 1 0 0 0 29 23V9a1 1 0 0 0-.496-.864M16 3.158L26.016 9L16 14.842L5.984 9ZM5 10.74l10 5.833V28.26L5 22.426Zm12 17.52V16.574l10-5.833v11.685Z"/></svg>',
-  SPHERE = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2S2 6.477 2 12s4.477 10 10 10"/><path d="M12 22c-3.314 0-6-4.477-6-10S8.686 2 12 2"/></g></svg>',
-  CYLINDER = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2c8 0 8 3 8 3s0 3-8 3s-8-3-8-3s0-3 8-3Zm0 14c8 0 8 3 8 3s0 3-8 3s-8-3-8-3s0-3 8-3Z"/><path stroke-linecap="round" stroke-linejoin="round" d="M20 5v14M4 5v14"/></g></svg>'
 };
 
 export enum TOOL_ICONS {
@@ -36,7 +21,7 @@ const ARROW_ICON = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
 
 export const MENU = [
   { type: 'button', tool: AVAILABLE_TOOLS.SELECT, icon: TOOL_ICONS.SELECT, action: () => { } },
-  { type: 'select', tool: AVAILABLE_TOOLS.ADD_SHAPE, icon: SHAPE_ICON[AVAILABLE_SHAPES.CUBE], options: Object.values(AVAILABLE_SHAPES), action: addShape },
+  { type: 'select', tool: AVAILABLE_TOOLS.ADD_SHAPE, icon: SHAPE_ICON[AVAILABLE_SHAPES.CUBE], options: Object.values(AVAILABLE_SHAPES), action: enablePointerMode },
   { type: 'button', tool: AVAILABLE_TOOLS.MOVE, icon: TOOL_ICONS.MOVE, action: setTransformControlMode },
   { type: 'button', tool: AVAILABLE_TOOLS.ROTATE, icon: TOOL_ICONS.ROTATE, action: setTransformControlMode },
   { type: 'button', tool: AVAILABLE_TOOLS.SCALE, icon: TOOL_ICONS.SCALE, action: setTransformControlMode },
@@ -54,7 +39,8 @@ export function initMenu(container: Element) {
     if (menu.tool === AVAILABLE_TOOLS.SELECT) {
       item.classList.add('active');
     }
-    item.querySelector('button')?.addEventListener('click', () => {
+    item.querySelector('button')?.addEventListener('click', (e) => {
+      e.stopPropagation();
       setSelectedTool(menu.tool, menu.action);
     });
     menuCtn?.appendChild(item);
@@ -77,6 +63,10 @@ export function setSelectedTool(tool: AVAILABLE_TOOLS, executeAction: Function =
   } else {
     EDITOR_STATE.transformControl.detach();
   }
+  if (tool !== AVAILABLE_TOOLS.ADD_SHAPE) {
+    disablePointerMode();
+  }
+
   EDITOR_STATE.selectedTool = tool;
 }
 
@@ -114,7 +104,7 @@ function createMenuItem({ tool, icon, type, options, action }: { tool: AVAILABLE
         setSelectedTool(AVAILABLE_TOOLS.ADD_SHAPE, action);
 
         dropdown.classList.toggle('hidden');
-      });
+      },);
     });
 
     arrow.addEventListener('click', () => {
@@ -147,62 +137,16 @@ function setMenuIcon(containter: Element, shape: string) {
   containter.querySelector('svg')?.classList.add('w-6');
 }
 
-function changeSelectedShape(container) {
-  // container.querySelector('.selectTool')?.addEventListener('click', () => {
-  //   setSelectedTool(AVAILABLE_TOOLS.SELECT);
-  //   removePhantomShape();
-  // });
-
-  // container.querySelector('.addElement')
-  //   ?.addEventListener('change', ({ target: { value } }) => {
-  //     setSelectedTool(AVAILABLE_TOOLS.ADD_SHAPE);
-
-  //     createPhantomShape(EDITOR_STATE.selectedShape);
-  //   });
-
-  // trackMouse = true;
-  // const currentMousePos = new THREE.Vector2(0, 0);
-  // renderer.domElement.addEventListener('mousedown', (e) => {
-  //   trackMouse = false;
-  //   currentMousePos.set(e.clientX, e.clientY);
-  // });
-  // renderer.domElement.addEventListener('mouseup', (event) => {
-  //   if (EDITOR_STATE.selectedTool !== AVAILABLE_TOOLS.ADD_SHAPE) return;
-
-  //   trackMouse = true;
-  //   if (currentMousePos.x === event.clientX && currentMousePos.y === event.clientY) {
-  //     switch (EDITOR_STATE.selectedShape) {
-  //       case AVAILABLE_SHAPES.CUBE:
-  //         addCube(PHANTOM_SHAPRES['phantomCube']);
-  //         break;
-  //       case AVAILABLE_SHAPES.SPHERE:
-  //         addSphere(PHANTOM_SHAPRES['phantomSphere']);
-  //         break;
-  //       case AVAILABLE_SHAPES.CYLINDER:
-  //         addCylinder(PHANTOM_SHAPRES['phantomCylinder']);
-  //         break;
-  //     }
-  //   }
-  // });
-}
-
 function getMenuCointainer() {
   return EDITOR_STATE.container.querySelector('menu ul');
 }
 
-function addShape() {
-  let selectedGeometry;
-  switch (EDITOR_STATE.selectedShape) {
-    case AVAILABLE_SHAPES.CUBE:
-      selectedGeometry = addCube(null);
-      break;
-    case AVAILABLE_SHAPES.SPHERE:
-      selectedGeometry = addSphere(null);
-      break;
-    case AVAILABLE_SHAPES.CYLINDER:
-      selectedGeometry = addCylinder(null);
-      break;
-  }
-  updateSceneContent();
-  selectObject(selectedGeometry);
+function enablePointerMode() {
+  EDITOR_STATE.pointerTarget.userData.enabled = true;
+  document.addEventListener('click', addShape);
+}
+
+function disablePointerMode() {
+  EDITOR_STATE.pointerTarget.userData.enabled = false;
+  document.removeEventListener('click', addShape);
 }

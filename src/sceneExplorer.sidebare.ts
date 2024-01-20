@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import { EDITOR_STATE } from "./state";
 import { HELPER_GROUP_NAME, selectObject, unselectObject } from "./helpers";
-import { SHAPE_ICON } from "./menu";
+import { SHAPE_ICON } from "./shape";
 
 export type EditorObject = THREE.Mesh<THREE.BufferGeometry, THREE.Material>;
 

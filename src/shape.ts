@@ -1,41 +1,48 @@
 import * as THREE from "three";
 import { EDITOR_STATE } from "./state";
-import { get3DMousePosition, getMousePosition, getNormilizedMousePosition } from "./helpers";
+import { get3DMousePosition, getMousePosition, getNormilizedMousePosition, selectObject } from "./helpers";
 import { TransformControlsPlane } from "three/examples/jsm/controls/TransformControls";
+import { updateSceneContent } from "./sceneExplorer.sidebare";
 
-export function addCube(phantomCube) {
+
+export enum AVAILABLE_SHAPES {
+  CUBE = 'CUBE',
+  SPHERE = 'SPHERE',
+  CYLINDER = 'CYLINDER',
+};
+
+export enum SHAPE_ICON {
+  CUBE = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><path fill="currentColor" d="m28.504 8.136l-12-7a1 1 0 0 0-1.008 0l-12 7A1 1 0 0 0 3 9v14a1 1 0 0 0 .496.864l12 7a1 1 0 0 0 1.008 0l12-7A1 1 0 0 0 29 23V9a1 1 0 0 0-.496-.864M16 3.158L26.016 9L16 14.842L5.984 9ZM5 10.74l10 5.833V28.26L5 22.426Zm12 17.52V16.574l10-5.833v11.685Z"/></svg>',
+  SPHERE = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2S2 6.477 2 12s4.477 10 10 10"/><path d="M12 22c-3.314 0-6-4.477-6-10S8.686 2 12 2"/></g></svg>',
+  CYLINDER = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2c8 0 8 3 8 3s0 3-8 3s-8-3-8-3s0-3 8-3Zm0 14c8 0 8 3 8 3s0 3-8 3s-8-3-8-3s0-3 8-3Z"/><path stroke-linecap="round" stroke-linejoin="round" d="M20 5v14M4 5v14"/></g></svg>'
+};
+
+
+export function addCube(position: THREE.Vector3 | null) {
   const geometry = new THREE.BoxGeometry(1, 1, 1);
-  const material = getStandardMaterial();
-  const cube = new THREE.Mesh(geometry, material);
-
-  // cube.position.copy(phantomCube.position.clone());
-  EDITOR_STATE.objects.push(cube);
-  EDITOR_STATE.scene.add(cube);
-
-  return cube;
+  return createMesh(geometry, position);
 }
 
-export function addSphere(phantomSphere) {
+export function addSphere(position: THREE.Vector3 | null) {
   const geometry = new THREE.SphereGeometry(1, 32, 32);
-  const material = getStandardMaterial();
-  const sphere = new THREE.Mesh(geometry, material);
-
-  // sphere.position.copy(phantomSphere.position.clone());
-  EDITOR_STATE.objects.push(sphere);
-  EDITOR_STATE.scene.add(sphere);
-
-  return sphere;
+  return createMesh(geometry, position);
 }
 
-export function addCylinder(phantomCylinder) {
+export function addCylinder(position: THREE.Vector3 | null) {
   const geometry = new THREE.CylinderGeometry(1, 1, 1, 32);
+  return createMesh(geometry, position);
+}
+
+function createMesh(geometry: THREE.BufferGeometry, position: THREE.Vector3 | null) {
   const material = getStandardMaterial();
-  const cylinder = new THREE.Mesh(geometry, material);
+  const mesh = new THREE.Mesh(geometry, material);
 
-  // cylinder.position.copy(phantomCylinder.position.clone());
-  EDITOR_STATE.scene.add(cylinder);
+  if (position) {
+    mesh.position.copy(position.clone());
+  }
+  EDITOR_STATE.scene.add(mesh);
 
-  return cylinder;
+  return mesh;
 }
 
 export function initPhantomShpes() {
@@ -155,8 +162,8 @@ export function createTargetShape() {
 
     group.scale.set(scaleFactor, 0, scaleFactor);
   });
-
-  group.visible = true;
+  group.visible = false;
+  group.userData.enabled = false;
 
   return group;
 }
@@ -170,7 +177,13 @@ export function removeTargetTracking() {
 }
 
 function trackMouse(event) {
-  EDITOR_STATE.pointerTarget.position.copy(get3DMousePosition(event))
+  const worldPosition = get3DMousePosition(event);
+  if (!worldPosition.x && !worldPosition.z) {
+    EDITOR_STATE.pointerTarget.visible = false;
+  } else {
+    EDITOR_STATE.pointerTarget.visible = EDITOR_STATE.pointerTarget.userData.enabled;
+    EDITOR_STATE.pointerTarget.position.copy(worldPosition);
+  }
 }
 
 function intersectObjectWithRay(object, raycaster, includeInvisible) {
@@ -189,4 +202,21 @@ function intersectObjectWithRay(object, raycaster, includeInvisible) {
 
   return false;
 
+}
+
+export async function addShape() {
+  let selectedGeometry;
+  switch (EDITOR_STATE.selectedShape) {
+    case AVAILABLE_SHAPES.CUBE:
+      selectedGeometry = addCube(EDITOR_STATE.pointerTarget.position);
+      break;
+    case AVAILABLE_SHAPES.SPHERE:
+      selectedGeometry = addSphere(EDITOR_STATE.pointerTarget.position);
+      break;
+    case AVAILABLE_SHAPES.CYLINDER:
+      selectedGeometry = addCylinder(EDITOR_STATE.pointerTarget.position);
+      break;
+  }
+  updateSceneContent();
+  selectObject(selectedGeometry);
 }

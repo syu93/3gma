@@ -2,7 +2,6 @@ import page, { Context } from 'page';
 import { auth, loginWithGoogle } from './firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import { initEditor } from './editor';
-import './components/3gma-dropdown';
 
 const app = document.querySelector('#app');
 const router = app?.querySelector('#router');

@@ -1,7 +1,8 @@
 import { ViewHelper } from "three/examples/jsm/helpers/ViewHelper";
-import { AVAILABLE_SHAPES, AVAILABLE_TOOLS } from "./menu";
+import { AVAILABLE_TOOLS } from "./menu";
 import { TransformControls } from "three/examples/jsm/controls/TransformControls";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
+import { AVAILABLE_SHAPES } from "./shape";
 
 export const EDITOR_STATE = new Proxy(({
   transformControl: undefined as unknown as TransformControls,
@@ -19,6 +20,7 @@ export const EDITOR_STATE = new Proxy(({
   clock: undefined as unknown as THREE.Clock,
   container: undefined as unknown as Element,
   sceneList: undefined as unknown as Element,
+  mouved: false,
 }), {
   set: (target, key, value) => {
     target[key] = value;
