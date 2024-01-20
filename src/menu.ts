@@ -1,5 +1,7 @@
-import { addShape, SHAPE_ICON, AVAILABLE_SHAPES } from "./shape";
+import * as THREE from "three";
+import { addShape, SHAPE_ICON, AVAILABLE_SHAPES, disableClickToAddShape, enableClickToAddShape } from "./shape";
 import { EDITOR_STATE } from "./state";
+import { getNormilizedMousePosition } from "./helpers";
 
 export enum AVAILABLE_TOOLS {
   SELECT = 'SELECT',
@@ -142,11 +144,12 @@ function getMenuCointainer() {
 }
 
 function enablePointerMode() {
+
   EDITOR_STATE.pointerTarget.userData.enabled = true;
-  document.addEventListener('click', addShape);
+  enableClickToAddShape();
 }
 
 function disablePointerMode() {
   EDITOR_STATE.pointerTarget.userData.enabled = false;
-  document.removeEventListener('click', addShape);
+  disableClickToAddShape();
 }

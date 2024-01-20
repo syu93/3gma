@@ -16,7 +16,6 @@ export const EDITOR_STATE = new Proxy(({
   selectBox: undefined as unknown as THREE.BoxHelper,
   pointerTarget: undefined as unknown as THREE.Object3D,
   viewHelper: undefined as unknown as ViewHelper,
-  objects: [] as THREE.Object3D[],
   clock: undefined as unknown as THREE.Clock,
   container: undefined as unknown as Element,
   sceneList: undefined as unknown as Element,

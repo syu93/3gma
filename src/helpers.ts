@@ -89,17 +89,19 @@ export function initObjectSelection() {
 
     const raycaster = new THREE.Raycaster();
     raycaster.setFromCamera(mousePosition, EDITOR_STATE.camera);
-    const intersects = raycaster.intersectObjects(EDITOR_STATE.objects, false);
+    const intersects = raycaster.intersectObjects(EDITOR_STATE.scene.children, false);
     if (intersects.length > 0 && intersects[0].object.visible) {
       selectObject(intersects[0].object);
-    } else if (!EDITOR_STATE.pointerTarget.userData.enabled) {
-      // @FIXME: prevent unselect when add a new object
+    } else {
       unselectObject();
     }
   });
 }
 
 export function selectObject(object: THREE.Object3D) {
+  if (object.visible === false) {
+    return;
+  }
   EDITOR_STATE.selectedObject = object;
   if ([AVAILABLE_TOOLS.MOVE, AVAILABLE_TOOLS.ROTATE, AVAILABLE_TOOLS.SCALE].includes(EDITOR_STATE.selectedTool)) {
     EDITOR_STATE.transformControl.attach(object);

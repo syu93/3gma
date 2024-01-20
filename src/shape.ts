@@ -17,6 +17,8 @@ export enum SHAPE_ICON {
   CYLINDER = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2c8 0 8 3 8 3s0 3-8 3s-8-3-8-3s0-3 8-3Zm0 14c8 0 8 3 8 3s0 3-8 3s-8-3-8-3s0-3 8-3Z"/><path stroke-linecap="round" stroke-linejoin="round" d="M20 5v14M4 5v14"/></g></svg>'
 };
 
+const onDownPosition = new THREE.Vector2();
+const onUpPosition = new THREE.Vector2();
 
 export function addCube(position: THREE.Vector3 | null) {
   const geometry = new THREE.BoxGeometry(1, 1, 1);
@@ -78,69 +80,6 @@ export function removePhantomShape() {
   });
 }
 
-function createPhantomShape(shape) {
-  removePhantomShape();
-
-  let selectedGeometry;
-  switch (shape) {
-    case 'cube':
-      selectedGeometry = PHANTOM_SHAPRES['phantomCube'];
-      break;
-    case 'sphere':
-      selectedGeometry = PHANTOM_SHAPRES['phantomSphere'];
-      break;
-    case 'cylinder':
-      selectedGeometry = PHANTOM_SHAPRES['phantomCylinder'];
-      break;
-  }
-  if (selectedGeometry) {
-    scene.add(selectedGeometry);
-  }
-
-  window.addEventListener('mousemove', mouseListener);
-  function scaleFactor(mousePositionY) {
-    // Calculate the normalized position
-    var normalizedY = mousePositionY / window.innerHeight;
-
-    // Calculate the distance from the camera
-    var distance = camera.position.z;
-
-    // Apply a gradual increase in the scaling factor as the mouse approaches the edge and the distance from the camera increases
-    var scalingFactor = 0.1 + normalizedY * 1.5 * distance * 0.001;
-
-    // Limit the scaling factor to a reasonable range
-    scalingFactor = Math.min(scalingFactor, 0.5);
-    scalingFactor = Math.max(scalingFactor, window.innerHeight * 0.9);
-
-    return scalingFactor;
-  }
-  function mouseListener(event) {
-    mousePosition.x = (event.clientX / window.innerWidth) * 2 - 1;
-    mousePosition.y = - (event.clientY / window.innerHeight) * 2 + 1;
-
-    // Make the sphere follow the mouse
-    var vector = new THREE.Vector3(mousePosition.x, 0, mousePosition.y);
-    vector.unproject(camera);
-    var dir = vector.sub(camera.position).normalize();
-
-    var distance = - camera.position.z / dir.z;
-
-    var pos = camera.position.clone().add(dir.multiplyScalar(distance));
-    if (trackMouse) {
-      pos.y = 0;
-
-      // Scale mousePosition.y to prevent extreme values
-      var scaledY = mousePosition.y * (1 / window.innerHeight);
-
-      // Apply the custom scaling factor
-      var adjustedScalingFactor = scaleFactor(scaledY);
-      pos.z = -scaledY * distance * adjustedScalingFactor;
-
-      selectedGeometry.position.copy(pos);
-    }
-  }
-}
-
 export function createTargetShape() {
   const group = new THREE.Group();
   // Circle parameters
@@ -186,22 +125,28 @@ function trackMouse(event) {
   }
 }
 
-function intersectObjectWithRay(object, raycaster, includeInvisible) {
+export function enableClickToAddShape() {
+  EDITOR_STATE.renderer.domElement.addEventListener('mousedown', setMouseDownPosition);
+  EDITOR_STATE.renderer.domElement.addEventListener('mouseup', shouldAddShape);
+}
 
-  const allIntersections = raycaster.intersectObject(object, true);
+function setMouseDownPosition(event) {
+  const { x, y } = getNormilizedMousePosition(event);
+  onDownPosition.set(x, y);
+}
 
-  for (let i = 0; i < allIntersections.length; i++) {
-
-    if (allIntersections[i].object.visible || includeInvisible) {
-
-      return allIntersections[i];
-
-    }
-
+function shouldAddShape(event) {
+  const { x, y } = getNormilizedMousePosition(event);
+  onUpPosition.set(x, y);
+  if (onDownPosition.distanceTo(onUpPosition) >= 0.01) {
+    return;
   }
+  addShape();
+}
 
-  return false;
-
+export function disableClickToAddShape() {
+  EDITOR_STATE.renderer.domElement.removeEventListener('mousedown', setMouseDownPosition);
+  EDITOR_STATE.renderer.domElement.removeEventListener('mouseup', shouldAddShape);
 }
 
 export async function addShape() {
