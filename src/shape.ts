@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import { EDITOR_STATE } from "./state";
-import { get3DMousePosition, getMousePosition, getNormilizedMousePosition, selectObject } from "./helpers";
+import { HELPER_GROUP_NAME, get3DMousePosition, getMousePosition, getNormilizedMousePosition, selectObject } from "./helpers";
 import { TransformControlsPlane } from "three/examples/jsm/controls/TransformControls";
 import { updateSceneContent } from "./sceneExplorer.sidebare";
 
@@ -164,4 +164,55 @@ export async function addShape() {
   }
   updateSceneContent();
   selectObject(selectedGeometry);
+}
+
+export enum AVAILABLE_LIGHTS {
+  SUNLIGHT = 'DirectionalLight',
+  LIGHT_BULB = 'PointLight',
+  SPOT = 'SPOT',
+  SPOT_LIGHTS = 'SpotLight'
+}
+
+export function addLight(type: AVAILABLE_LIGHTS) {
+  const geometry = new THREE.SphereGeometry(2, 4, 2);
+  const material = new THREE.MeshBasicMaterial({ color: 0xff0000, visible: false });
+  let light;
+  switch (type) {
+    case AVAILABLE_LIGHTS.SUNLIGHT:
+      light = new THREE.DirectionalLight(0xffffff, 1);
+      light.position.set(10, 10, 10);
+
+      const helper = new THREE.DirectionalLightHelper(light, 1);
+      helper.userData.setSelectedState = (state: boolean) => {
+        const color = state ? 0xffff00 : 0xffffff;
+        helper.color = new THREE.Color(color);
+        helper.update();
+      }
+
+      const picker = new THREE.Mesh(geometry, material);
+      picker.material.color.setHex(0xff0000);
+      picker.userData = { isTargetHelper: true, target: light, helper };
+      helper.add(picker);
+
+      EDITOR_STATE.sceneHelper.add(helper);
+
+      EDITOR_STATE.scene.add(light);
+      break;
+    case AVAILABLE_LIGHTS.LIGHT_BULB:
+      light = new THREE.PointLight(0xffffff, 1, 100);
+      light.position.set(0, 10, 0);
+      EDITOR_STATE.scene.add(light);
+      break;
+    case AVAILABLE_LIGHTS.SPOT:
+      light = new THREE.SpotLight(0xffffff, 1, 100);
+      light.position.set(0, 10, 0);
+      EDITOR_STATE.scene.add(light);
+      break;
+    case AVAILABLE_LIGHTS.SPOT_LIGHTS:
+      light = new THREE.SpotLight(0xffffff, 1, 100);
+      light.position.set(0, 10, 0);
+      EDITOR_STATE.scene.add(light);
+      break;
+  }
+  updateSceneContent();
 }

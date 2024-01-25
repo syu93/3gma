@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { EDITOR_STATE } from './state';
 import { addHelpers, initObjectSelection } from './helpers';
 import { initMenu } from './menu';
-import { initPhantomShpes } from './shape';
+import { AVAILABLE_LIGHTS, addLight, initPhantomShpes } from './shape';
 import { getSidebarWidth, initSceneExplorer, updateSceneContent } from './sceneExplorer.sidebare';
 
 const PHANTOM_SHAPRES = initPhantomShpes();
@@ -15,13 +15,14 @@ export function initEditor(container: Element) {
   EDITOR_STATE.camera = initCamera(editorWidth);
 
   EDITOR_STATE.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+  EDITOR_STATE.renderer.setSize(editorWidth, window.innerHeight);
+
   EDITOR_STATE.container = container;
 
-  EDITOR_STATE.renderer.setSize(editorWidth, window.innerHeight);
   container.querySelector('main')?.appendChild(EDITOR_STATE.renderer.domElement);
 
   EDITOR_STATE.clock = new THREE.Clock();
-  animate();
+
 
   initMenu(container);
   initObjectSelection();
@@ -33,6 +34,11 @@ export function initEditor(container: Element) {
 
   const fogColor = new THREE.Color(0x27272a);
   EDITOR_STATE.scene.fog = new THREE.FogExp2(fogColor, 0.01);
+  EDITOR_STATE.sceneHelper.fog = new THREE.FogExp2(fogColor, 0.01);
+
+  animate();
+
+  addLight(AVAILABLE_LIGHTS.SUNLIGHT);
 }
 
 function initCamera(editorWidth) {
@@ -59,6 +65,7 @@ function animate() {
   }
   EDITOR_STATE.renderer.autoClear = false;
   EDITOR_STATE.renderer.render(EDITOR_STATE.scene, EDITOR_STATE.camera);
+  EDITOR_STATE.renderer.render(EDITOR_STATE.sceneHelper, EDITOR_STATE.camera);
 }
 
 function onWindowResize() {

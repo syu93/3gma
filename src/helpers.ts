@@ -14,9 +14,9 @@ const raycaster = new THREE.Raycaster();
 export const HELPER_GROUP_NAME = 'helpers';
 
 export function addHelpers() {
-  const group = new THREE.Group();
-  group.name = HELPER_GROUP_NAME;
-  EDITOR_STATE.scene.add(group);
+  EDITOR_STATE.sceneHelper = new THREE.Scene();
+  EDITOR_STATE.sceneHelper.name = HELPER_GROUP_NAME;
+  // EDITOR_STATE.scene.add(group);
 
   const gridSize = 3000;
   const gridColor = 0x3e3e3e;
@@ -25,18 +25,18 @@ export function addHelpers() {
   const innerGrid = new THREE.GridHelper(gridSize, gridSize, gridColor);
   innerGrid.material.color.setHex(gridColor);
   innerGrid.material.vertexColors = false;
-  group.add(innerGrid);
+  EDITOR_STATE.sceneHelper.add(innerGrid);
 
   const outterGrid = new THREE.GridHelper(gridSize, gridSize / 5, subGridColor);
   outterGrid.material.color.setHex(subGridColor);
   outterGrid.material.vertexColors = false;
-  group.add(outterGrid);
+  EDITOR_STATE.sceneHelper.add(outterGrid);
 
   const axesHelper = new THREE.AxesHelper(50);
-  group.add(axesHelper);
+  EDITOR_STATE.sceneHelper.add(axesHelper);
 
   const boxHelper = getSelectionBox();
-  group.add(boxHelper);
+  EDITOR_STATE.sceneHelper.add(boxHelper);
   EDITOR_STATE.selectBox = boxHelper;
 
   const viewHelperElement = document.querySelector<HTMLElement>('.viewHelper');
@@ -58,12 +58,12 @@ export function addHelpers() {
   }
 
   const { orbitControl, transformControl } = initControls();
-  group.add(transformControl);
+  EDITOR_STATE.sceneHelper.add(transformControl);
   EDITOR_STATE.orbitControl = orbitControl;
   EDITOR_STATE.transformControl = transformControl;
 
   EDITOR_STATE.pointerTarget = createTargetShape();
-  group.add(EDITOR_STATE.pointerTarget);
+  EDITOR_STATE.sceneHelper.add(EDITOR_STATE.pointerTarget);
 
   addTargetTracking();
 }
@@ -89,11 +89,35 @@ export function initObjectSelection() {
 
     const raycaster = new THREE.Raycaster();
     raycaster.setFromCamera(mousePosition, EDITOR_STATE.camera);
-    const intersects = raycaster.intersectObjects(EDITOR_STATE.scene.children, false);
+
+    const selectableObjects = [] as THREE.Object3D[];
+    EDITOR_STATE.scene.traverseVisible(child => selectableObjects.push(child));
+    EDITOR_STATE.sceneHelper.traverseVisible(child => {
+      if (child.userData.isTargetHelper) {
+        selectableObjects.push(child);
+      }
+    });
+    const intersects = raycaster.intersectObjects(selectableObjects, false);
+
     if (intersects.length > 0 && intersects[0].object.visible) {
-      selectObject(intersects[0].object);
+      const targetObject = intersects[0].object;
+
+      if (targetObject.userData.isTargetHelper) {
+        console.log(targetObject.userData.target);
+        selectObject(targetObject.userData.target);
+        const helper = targetObject.userData.helper;
+        helper.userData.setSelectedState(true);
+      } else {
+        selectObject(targetObject);
+      }
     } else {
+      EDITOR_STATE.sceneHelper.traverseVisible(child => {
+        if (child.userData.setSelectedState) {
+          child.userData.setSelectedState(false);
+        }
+      });
       unselectObject();
+
     }
   });
 }

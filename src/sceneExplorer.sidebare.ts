@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import { EDITOR_STATE } from "./state";
 import { HELPER_GROUP_NAME, selectObject, unselectObject } from "./helpers";
-import { SHAPE_ICON } from "./shape";
+import { AVAILABLE_LIGHTS, SHAPE_ICON } from "./shape";
 
 export type EditorObject = THREE.Mesh<THREE.BufferGeometry, THREE.Material>;
 
@@ -48,7 +48,11 @@ export function updateSceneContent() {
   if (EDITOR_STATE.sceneList) {
     EDITOR_STATE.sceneList.innerHTML = '';
     EDITOR_STATE.scene.children
-      .filter((item) => item.name !== HELPER_GROUP_NAME)
+      .filter((item) => {
+        console.log(item.type);
+
+        return item.name !== HELPER_GROUP_NAME && !['DirectionalLightHelper'].includes(item.type as AVAILABLE_LIGHTS);
+      })
       .forEach((item) => {
         EDITOR_STATE.sceneList.appendChild(createSceneItem(item as EditorObject));
       });
@@ -130,20 +134,14 @@ function resize(leftPanel: HTMLElement, e: MouseEvent) {
 }
 
 function getNameAndIcon(object: EditorObject): { name: string, icon: SHAPE_ICON } {
-  let name = '';
   switch (object.type) {
     case 'Mesh':
-      name = object.name || getMeshName(object);
-      break;
+      return { name: object.name || getMeshName(object), icon: SHAPE_ICON[getIconFromMesh(object.geometry.type)] };
     case 'Group':
-      name = object.name || 'Group';
-      break;
+      return { name: object.name || 'Group', icon: SHAPE_ICON[getIconFromMesh(object.geometry.type)] };
     default:
-      name = object.type;
-      break;
+      return { name: object.type || 'Group', icon: null };
   }
-
-  return { name, icon: SHAPE_ICON[getIconFromMesh(object.geometry.type)] };
 }
 
 function getMeshName(object: EditorObject) {

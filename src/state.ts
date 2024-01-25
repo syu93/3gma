@@ -8,6 +8,7 @@ export const EDITOR_STATE = new Proxy(({
   transformControl: undefined as unknown as TransformControls,
   orbitControl: undefined as unknown as OrbitControls,
   scene: undefined as unknown as THREE.Scene,
+  sceneHelper: undefined as unknown as THREE.Scene,
   camera: undefined as unknown as THREE.PerspectiveCamera,
   renderer: undefined as unknown as THREE.WebGLRenderer,
   selectedTool: AVAILABLE_TOOLS.SELECT,
