@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import { EDITOR_STATE } from "./state";
-import { HELPER_GROUP_NAME, get3DMousePosition, getMousePosition, getNormilizedMousePosition, selectObject } from "./helpers";
+import { HELPER_GROUP_NAME, get3DMousePosition, getMousePosition, getNormilizedMousePosition, selectObject, selectObjectWithHelpers } from "./helpers";
 import { TransformControlsPlane } from "three/examples/jsm/controls/TransformControls";
 import { updateSceneContent } from "./sceneExplorer.sidebare";
 
@@ -19,6 +19,9 @@ export enum SHAPE_ICON {
 
 const onDownPosition = new THREE.Vector2();
 const onUpPosition = new THREE.Vector2();
+
+const geometry = new THREE.SphereGeometry(2, 4, 2);
+const material = new THREE.MeshBasicMaterial({ color: 0xff0000, visible: false });
 
 export function addCube(position: THREE.Vector3 | null) {
   const geometry = new THREE.BoxGeometry(1, 1, 1);
@@ -173,30 +176,42 @@ export enum AVAILABLE_LIGHTS {
   SPOT_LIGHTS = 'SpotLight'
 }
 
+export const LIGHTS_ICON = {
+  [AVAILABLE_LIGHTS.SUNLIGHT]: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M4.93 4.93l1.41 1.41m11.32 11.32l1.41 1.41M2 12h2m16 0h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></g></svg>',
+}
+
+export function addDirectionalLight(position: THREE.Vector3 | null): { light: THREE.DirectionalLight, helper: THREE.DirectionalLightHelper } {
+  const light = new THREE.DirectionalLight(0xffffff, 1);
+  if (position) {
+    light.position.copy(position.clone());
+  }
+
+  const helper = new THREE.DirectionalLightHelper(light, 1);
+  helper.userData.setSelectedState = (state: boolean) => {
+    const color = state ? 0xffff00 : 0xffffff;
+    helper.color = new THREE.Color(color);
+    helper.update();
+  }
+
+  const picker = createHelperPicker(light, helper);
+  helper.add(picker);
+
+  light.userData = { picker };
+
+  EDITOR_STATE.sceneHelper.add(helper);
+
+  EDITOR_STATE.scene.add(light);
+
+  return { light, helper };
+}
+
 export function addLight(type: AVAILABLE_LIGHTS) {
-  const geometry = new THREE.SphereGeometry(2, 4, 2);
-  const material = new THREE.MeshBasicMaterial({ color: 0xff0000, visible: false });
-  let light;
+
   switch (type) {
     case AVAILABLE_LIGHTS.SUNLIGHT:
-      light = new THREE.DirectionalLight(0xffffff, 1);
-      light.position.set(10, 10, 10);
-
-      const helper = new THREE.DirectionalLightHelper(light, 1);
-      helper.userData.setSelectedState = (state: boolean) => {
-        const color = state ? 0xffff00 : 0xffffff;
-        helper.color = new THREE.Color(color);
-        helper.update();
-      }
-
-      const picker = new THREE.Mesh(geometry, material);
-      picker.material.color.setHex(0xff0000);
-      picker.userData = { isTargetHelper: true, target: light, helper };
-      helper.add(picker);
-
-      EDITOR_STATE.sceneHelper.add(helper);
-
-      EDITOR_STATE.scene.add(light);
+      const { light, helper } = addDirectionalLight(EDITOR_STATE.pointerTarget.position);
+      updateSceneContent();
+      selectObjectWithHelpers(light, helper);
       break;
     case AVAILABLE_LIGHTS.LIGHT_BULB:
       light = new THREE.PointLight(0xffffff, 1, 100);
@@ -214,5 +229,12 @@ export function addLight(type: AVAILABLE_LIGHTS) {
       EDITOR_STATE.scene.add(light);
       break;
   }
-  updateSceneContent();
+
+}
+
+function createHelperPicker(light: THREE.Light, helper: THREE.Object3D) {
+  const picker = new THREE.Mesh(geometry, material);
+  picker.material.color.setHex(0xff0000);
+  picker.userData = { isTargetHelper: true, target: light, helper };
+  return picker;
 }

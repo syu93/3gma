@@ -97,27 +97,20 @@ export function initObjectSelection() {
         selectableObjects.push(child);
       }
     });
+
     const intersects = raycaster.intersectObjects(selectableObjects, false);
 
     if (intersects.length > 0 && intersects[0].object.visible) {
       const targetObject = intersects[0].object;
-
       if (targetObject.userData.isTargetHelper) {
-        console.log(targetObject.userData.target);
-        selectObject(targetObject.userData.target);
-        const helper = targetObject.userData.helper;
-        helper.userData.setSelectedState(true);
+        const { target, helper } = targetObject.userData;
+        selectObjectWithHelpers(target, helper);
       } else {
         selectObject(targetObject);
       }
     } else {
-      EDITOR_STATE.sceneHelper.traverseVisible(child => {
-        if (child.userData.setSelectedState) {
-          child.userData.setSelectedState(false);
-        }
-      });
       unselectObject();
-
+      unselectObjectWithHelpers();
     }
   });
 }
@@ -127,24 +120,52 @@ export function selectObject(object: THREE.Object3D) {
     return;
   }
   EDITOR_STATE.selectedObject = object;
-  if ([AVAILABLE_TOOLS.MOVE, AVAILABLE_TOOLS.ROTATE, AVAILABLE_TOOLS.SCALE].includes(EDITOR_STATE.selectedTool)) {
-    EDITOR_STATE.transformControl.attach(object);
-  }
+  attachToTransformControl(object);
+
   if (EDITOR_STATE.selectBox) {
     EDITOR_STATE.selectBox.setFromObject(object);
     EDITOR_STATE.selectBox.position.copy(object.position);
     EDITOR_STATE.selectBox.visible = true;
     EDITOR_STATE.selectBox.update();
-    selectItemInList(object as EditorObject);
+    unselectObjectWithHelpers()
   }
+  selectItemInList(object as EditorObject);
+}
+
+export function selectObjectWithHelpers(object: THREE.Object3D, helper: THREE.Object3D) {
+  detachObjectFromSelectionBox();
+  EDITOR_STATE.selectedObject = object;
+  attachToTransformControl(object);
+
+  helper.userData.setSelectedState(true);
+  selectItemInList(object as EditorObject);
+}
+
+function attachToTransformControl(object: THREE.Object3D) {
+  if ([AVAILABLE_TOOLS.MOVE, AVAILABLE_TOOLS.ROTATE, AVAILABLE_TOOLS.SCALE].includes(EDITOR_STATE.selectedTool)) {
+    EDITOR_STATE.transformControl.attach(object);
+  }
+}
+
+function detachObjectFromSelectionBox() {
+  EDITOR_STATE.selectBox.visible = false;
+  EDITOR_STATE.selectBox?.dispose();
+  EDITOR_STATE.selectedObject = null;
 }
 
 export function unselectObject() {
   EDITOR_STATE.transformControl.detach();
-  EDITOR_STATE.selectBox.visible = false;
-  EDITOR_STATE.selectBox?.dispose();
-  EDITOR_STATE.selectedObject = null;
+  detachObjectFromSelectionBox()
   unselectItemInList();
+}
+
+export function unselectObjectWithHelpers() {
+  EDITOR_STATE.sceneHelper.traverseVisible(child => {
+    // Unselect all helpers
+    if (child.userData.setSelectedState) {
+      child.userData.setSelectedState(false);
+    }
+  });
 }
 
 export function getNormilizedMousePosition(event: MouseEvent): { x: number, y: number } {

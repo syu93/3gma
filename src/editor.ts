@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { EDITOR_STATE } from './state';
 import { addHelpers, initObjectSelection } from './helpers';
 import { initMenu } from './menu';
-import { AVAILABLE_LIGHTS, addLight, initPhantomShpes } from './shape';
+import { AVAILABLE_LIGHTS, addCube, addDirectionalLight, addLight, initPhantomShpes } from './shape';
 import { getSidebarWidth, initSceneExplorer, updateSceneContent } from './sceneExplorer.sidebare';
 
 const PHANTOM_SHAPRES = initPhantomShpes();
@@ -29,6 +29,10 @@ export function initEditor(container: Element) {
   addHelpers();
   initSceneExplorer(container);
 
+
+  addCube(new THREE.Vector3(1, 0, 1));
+  addDirectionalLight(new THREE.Vector3(0, 10, 0));
+
   updateSceneContent();
   window.addEventListener('resize', onWindowResize);
 
@@ -38,7 +42,6 @@ export function initEditor(container: Element) {
 
   animate();
 
-  addLight(AVAILABLE_LIGHTS.SUNLIGHT);
 }
 
 function initCamera(editorWidth) {

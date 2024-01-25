@@ -1,9 +1,9 @@
 import * as THREE from "three";
 import { EDITOR_STATE } from "./state";
-import { HELPER_GROUP_NAME, selectObject, unselectObject } from "./helpers";
-import { AVAILABLE_LIGHTS, SHAPE_ICON } from "./shape";
+import { HELPER_GROUP_NAME, selectObject, selectObjectWithHelpers, unselectObject } from "./helpers";
+import { AVAILABLE_LIGHTS, LIGHTS_ICON, SHAPE_ICON } from "./shape";
 
-export type EditorObject = THREE.Mesh<THREE.BufferGeometry, THREE.Material>;
+export type EditorObject = THREE.Mesh<THREE.BufferGeometry, THREE.Material> | THREE.Group | THREE.Light;
 
 const SIDEBAR_MIN_WIDTH = 10 * 16;
 const SIDEBAR_MAX_WIDTH = 20 * 16;
@@ -49,8 +49,6 @@ export function updateSceneContent() {
     EDITOR_STATE.sceneList.innerHTML = '';
     EDITOR_STATE.scene.children
       .filter((item) => {
-        console.log(item.type);
-
         return item.name !== HELPER_GROUP_NAME && !['DirectionalLightHelper'].includes(item.type as AVAILABLE_LIGHTS);
       })
       .forEach((item) => {
@@ -87,16 +85,21 @@ function createSceneItem(object: EditorObject) {
   item.appendChild(nameContainer);
   item.appendChild(displayMode);
   item.addEventListener('click', () => {
-    selectObject(object);
+    if ('isLight' in object) {
+      const { helper } = object.userData.picker.userData;
+      selectObjectWithHelpers(object, helper);
+    } else {
+      selectObject(object);
+    }
     selectItemInList(object)
   });
   return item;
 }
 
-function createIconContainer(icon: string) {
+function createIconContainer(icon: string | null) {
   const iconContainer = document.createElement('div');
   iconContainer.classList.add('icon');
-  iconContainer.innerHTML = icon;
+  iconContainer.innerHTML = icon ?? '';
   return iconContainer;
 }
 
@@ -113,6 +116,10 @@ function createDisplayModeContainer(object: EditorObject) {
   eyeContainer.innerHTML = object.visible ? EYE_ICONS.VISIBLE : EYE_ICONS.HIDDEN;
   eyeContainer.addEventListener('click', (e) => {
     e.stopPropagation();
+    if (object.userData.picker) {
+      const picker = object.userData.picker;
+      picker.userData.helper.visible = !object.visible;
+    }
     object.visible = !object.visible;
     eyeContainer.innerHTML = object.visible ? EYE_ICONS.VISIBLE : EYE_ICONS.HIDDEN;
     unselectObject();
@@ -133,19 +140,21 @@ function resize(leftPanel: HTMLElement, e: MouseEvent) {
   EDITOR_STATE.camera.updateProjectionMatrix();
 }
 
-function getNameAndIcon(object: EditorObject): { name: string, icon: SHAPE_ICON } {
+function getNameAndIcon(object: EditorObject): { name: string, icon: SHAPE_ICON | string | null } {
   switch (object.type) {
     case 'Mesh':
-      return { name: object.name || getMeshName(object), icon: SHAPE_ICON[getIconFromMesh(object.geometry.type)] };
+      return { name: object.name || getMeshName(object), icon: SHAPE_ICON[getIconFromMesh((object as THREE.Mesh).geometry.type)] };
+    case 'DirectionalLight':
+      return { name: object.name || getLightName(object), icon: LIGHTS_ICON[object.type] };
     case 'Group':
-      return { name: object.name || 'Group', icon: SHAPE_ICON[getIconFromMesh(object.geometry.type)] };
+      return { name: object.name || 'Group', icon: SHAPE_ICON[getIconFromMesh((object as THREE.Mesh).geometry.type)] };
     default:
       return { name: object.type || 'Group', icon: null };
   }
 }
 
 function getMeshName(object: EditorObject) {
-  switch (object.geometry.type) {
+  switch ((object as THREE.Mesh).geometry.type) {
     case 'BoxGeometry':
       return 'Box';
     case 'SphereGeometry':
@@ -154,6 +163,15 @@ function getMeshName(object: EditorObject) {
       return 'Cylinder';
     default:
       return object.geometry.type;
+  }
+}
+
+function getLightName(object: EditorObject) {
+  switch (object.type) {
+    case AVAILABLE_LIGHTS.SUNLIGHT:
+      return 'Sunlight';
+    default:
+      return object.type;
   }
 }
 
