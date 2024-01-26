@@ -5,7 +5,7 @@ import { EDITOR_STATE } from "./state";
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import { TransformControls } from 'three/examples/jsm/controls/TransformControls';
 import { EditorObject, selectItemInList, unselectItemInList } from './sceneExplorer.sidebare';
-import { addTargetTracking, createTargetShape } from './shape';
+import { addTargetTracking, createTargetShape } from './objectCreator.helper';
 
 export const targetPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
 const mousePosition = new THREE.Vector2(0, 0);

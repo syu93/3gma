@@ -1,7 +1,8 @@
 import * as THREE from "three";
 import { EDITOR_STATE } from "./state";
 import { HELPER_GROUP_NAME, selectObject, selectObjectWithHelpers, unselectObject } from "./helpers";
-import { AVAILABLE_LIGHTS, LIGHTS_ICON, SHAPE_ICON } from "./shape";
+import { SHAPE_ICON } from "./shape";
+import { AVAILABLE_LIGHTS, LIGHTS_ICON, } from "./light";
 
 export type EditorObject = THREE.Mesh<THREE.BufferGeometry, THREE.Material> | THREE.Group | THREE.Light;
 
@@ -48,9 +49,6 @@ export function updateSceneContent() {
   if (EDITOR_STATE.sceneList) {
     EDITOR_STATE.sceneList.innerHTML = '';
     EDITOR_STATE.scene.children
-      .filter((item) => {
-        return item.name !== HELPER_GROUP_NAME && !['DirectionalLightHelper'].includes(item.type as AVAILABLE_LIGHTS);
-      })
       .forEach((item) => {
         EDITOR_STATE.sceneList.appendChild(createSceneItem(item as EditorObject));
       });
@@ -145,7 +143,7 @@ function getNameAndIcon(object: EditorObject): { name: string, icon: SHAPE_ICON 
     case 'Mesh':
       return { name: object.name || getMeshName(object), icon: SHAPE_ICON[getIconFromMesh((object as THREE.Mesh).geometry.type)] };
     case 'DirectionalLight':
-      return { name: object.name || getLightName(object), icon: LIGHTS_ICON[object.type] };
+      return { name: object.name || getLightName(object), icon: LIGHTS_ICON[getIconFromLight((object as THREE.Light).type)] };
     case 'Group':
       return { name: object.name || 'Group', icon: SHAPE_ICON[getIconFromMesh((object as THREE.Mesh).geometry.type)] };
     default:
@@ -185,5 +183,14 @@ function getIconFromMesh(type: THREE.BufferGeometry<THREE.NormalBufferAttributes
       return 'CYLINDER';
     default:
       return 'CUBE';
+  }
+}
+
+function getIconFromLight(type: THREE.Light['type']) {
+  switch (type) {
+    case AVAILABLE_LIGHTS.SUNLIGHT:
+      return 'SUNLIGHT';
+    default:
+      return 'SUNLIGHT';
   }
 }

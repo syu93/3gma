@@ -3,6 +3,7 @@ import { AVAILABLE_TOOLS } from "./menu";
 import { TransformControls } from "three/examples/jsm/controls/TransformControls";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 import { AVAILABLE_SHAPES } from "./shape";
+import { AVAILABLE_LIGHTS } from "./light";
 
 export const EDITOR_STATE = new Proxy(({
   transformControl: undefined as unknown as TransformControls,
@@ -13,6 +14,7 @@ export const EDITOR_STATE = new Proxy(({
   renderer: undefined as unknown as THREE.WebGLRenderer,
   selectedTool: AVAILABLE_TOOLS.SELECT,
   selectedShape: AVAILABLE_SHAPES.CUBE,
+  selectedLight: AVAILABLE_LIGHTS.SUNLIGHT,
   selectedObject: null as THREE.Object3D | null,
   selectBox: undefined as unknown as THREE.BoxHelper,
   pointerTarget: undefined as unknown as THREE.Object3D,

@@ -2,10 +2,8 @@ import * as THREE from 'three';
 import { EDITOR_STATE } from './state';
 import { addHelpers, initObjectSelection } from './helpers';
 import { initMenu } from './menu';
-import { AVAILABLE_LIGHTS, addCube, addDirectionalLight, addLight, initPhantomShpes } from './shape';
+import { addDirectionalLight } from './light';
 import { getSidebarWidth, initSceneExplorer, updateSceneContent } from './sceneExplorer.sidebare';
-
-const PHANTOM_SHAPRES = initPhantomShpes();
 
 export function initEditor(container: Element) {
   EDITOR_STATE.scene = new THREE.Scene();
@@ -29,19 +27,16 @@ export function initEditor(container: Element) {
   addHelpers();
   initSceneExplorer(container);
 
-
-  addCube(new THREE.Vector3(1, 0, 1));
-  addDirectionalLight(new THREE.Vector3(0, 10, 0));
-
-  updateSceneContent();
   window.addEventListener('resize', onWindowResize);
 
   const fogColor = new THREE.Color(0x27272a);
   EDITOR_STATE.scene.fog = new THREE.FogExp2(fogColor, 0.01);
   EDITOR_STATE.sceneHelper.fog = new THREE.FogExp2(fogColor, 0.01);
 
-  animate();
+  loadScene();
+  updateSceneContent();
 
+  animate();
 }
 
 function initCamera(editorWidth) {
@@ -79,4 +74,8 @@ function onWindowResize() {
   EDITOR_STATE.renderer.setSize(editorWidth, h);
   EDITOR_STATE.camera.aspect = editorWidth / h;
   EDITOR_STATE.camera.updateProjectionMatrix();
+}
+
+function loadScene() {
+  addDirectionalLight(new THREE.Vector3(5, 5, 0));
 }

@@ -3,6 +3,7 @@ import { EDITOR_STATE } from "./state";
 import { HELPER_GROUP_NAME, get3DMousePosition, getMousePosition, getNormilizedMousePosition, selectObject, selectObjectWithHelpers } from "./helpers";
 import { TransformControlsPlane } from "three/examples/jsm/controls/TransformControls";
 import { updateSceneContent } from "./sceneExplorer.sidebare";
+import { AVAILABLE_TOOLS } from "./menu";
 
 
 export enum AVAILABLE_SHAPES {
@@ -16,12 +17,6 @@ export enum SHAPE_ICON {
   SPHERE = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2S2 6.477 2 12s4.477 10 10 10"/><path d="M12 22c-3.314 0-6-4.477-6-10S8.686 2 12 2"/></g></svg>',
   CYLINDER = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2c8 0 8 3 8 3s0 3-8 3s-8-3-8-3s0-3 8-3Zm0 14c8 0 8 3 8 3s0 3-8 3s-8-3-8-3s0-3 8-3Z"/><path stroke-linecap="round" stroke-linejoin="round" d="M20 5v14M4 5v14"/></g></svg>'
 };
-
-const onDownPosition = new THREE.Vector2();
-const onUpPosition = new THREE.Vector2();
-
-const geometry = new THREE.SphereGeometry(2, 4, 2);
-const material = new THREE.MeshBasicMaterial({ color: 0xff0000, visible: false });
 
 export function addCube(position: THREE.Vector3 | null) {
   const geometry = new THREE.BoxGeometry(1, 1, 1);
@@ -74,84 +69,6 @@ function getStandardMaterial() {
   return material;
 }
 
-export function removePhantomShape() {
-  Object.values(PHANTOM_SHAPRES).forEach((phantomObject) => {
-    const object = scene.getObjectByName(phantomObject.name);
-    if (object) {
-      scene.remove(object);
-    }
-  });
-}
-
-export function createTargetShape() {
-  const group = new THREE.Group();
-  // Circle parameters
-  const circleRadius = 3;
-  const circleSegments = 64;
-
-  // Create circle boundary
-  const circleGeometry = new THREE.CircleGeometry(circleRadius, circleSegments);
-  circleGeometry.rotateX(Math.PI / 2);
-  const circleMaterial = new THREE.MeshBasicMaterial({ color: 0xFFF000, side: THREE.DoubleSide, wireframe: true, transparent: true, opacity: 0.08 });
-  const circle = new THREE.Mesh(circleGeometry, circleMaterial);
-  group.add(circle);
-
-  let distance = EDITOR_STATE.orbitControl.getDistance();
-  EDITOR_STATE.orbitControl.addEventListener('change', () => {
-    const delta = distance / EDITOR_STATE.orbitControl.getDistance();
-    const zoom = Math.round(delta * 1e4) / 1e4;
-    const scaleFactor = 1 / zoom
-
-    group.scale.set(scaleFactor, 0, scaleFactor);
-  });
-  group.visible = false;
-  group.userData.enabled = false;
-
-  return group;
-}
-
-export function addTargetTracking() {
-  document.addEventListener('mousemove', trackMouse);
-}
-
-export function removeTargetTracking() {
-  document.removeEventListener('mousemove', trackMouse);
-}
-
-function trackMouse(event) {
-  const worldPosition = get3DMousePosition(event);
-  if (!worldPosition.x && !worldPosition.z) {
-    EDITOR_STATE.pointerTarget.visible = false;
-  } else {
-    EDITOR_STATE.pointerTarget.visible = EDITOR_STATE.pointerTarget.userData.enabled;
-    EDITOR_STATE.pointerTarget.position.copy(worldPosition);
-  }
-}
-
-export function enableClickToAddShape() {
-  EDITOR_STATE.renderer.domElement.addEventListener('mousedown', setMouseDownPosition);
-  EDITOR_STATE.renderer.domElement.addEventListener('mouseup', shouldAddShape);
-}
-
-function setMouseDownPosition(event) {
-  const { x, y } = getNormilizedMousePosition(event);
-  onDownPosition.set(x, y);
-}
-
-function shouldAddShape(event) {
-  const { x, y } = getNormilizedMousePosition(event);
-  onUpPosition.set(x, y);
-  if (onDownPosition.distanceTo(onUpPosition) >= 0.01) {
-    return;
-  }
-  addShape();
-}
-
-export function disableClickToAddShape() {
-  EDITOR_STATE.renderer.domElement.removeEventListener('mousedown', setMouseDownPosition);
-  EDITOR_STATE.renderer.domElement.removeEventListener('mouseup', shouldAddShape);
-}
-
 export async function addShape() {
   let selectedGeometry;
   switch (EDITOR_STATE.selectedShape) {
@@ -167,74 +84,4 @@ export async function addShape() {
   }
   updateSceneContent();
   selectObject(selectedGeometry);
-}
-
-export enum AVAILABLE_LIGHTS {
-  SUNLIGHT = 'DirectionalLight',
-  LIGHT_BULB = 'PointLight',
-  SPOT = 'SPOT',
-  SPOT_LIGHTS = 'SpotLight'
-}
-
-export const LIGHTS_ICON = {
-  [AVAILABLE_LIGHTS.SUNLIGHT]: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M4.93 4.93l1.41 1.41m11.32 11.32l1.41 1.41M2 12h2m16 0h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></g></svg>',
-}
-
-export function addDirectionalLight(position: THREE.Vector3 | null): { light: THREE.DirectionalLight, helper: THREE.DirectionalLightHelper } {
-  const light = new THREE.DirectionalLight(0xffffff, 1);
-  if (position) {
-    light.position.copy(position.clone());
-  }
-
-  const helper = new THREE.DirectionalLightHelper(light, 1);
-  helper.userData.setSelectedState = (state: boolean) => {
-    const color = state ? 0xffff00 : 0xffffff;
-    helper.color = new THREE.Color(color);
-    helper.update();
-  }
-
-  const picker = createHelperPicker(light, helper);
-  helper.add(picker);
-
-  light.userData = { picker };
-
-  EDITOR_STATE.sceneHelper.add(helper);
-
-  EDITOR_STATE.scene.add(light);
-
-  return { light, helper };
-}
-
-export function addLight(type: AVAILABLE_LIGHTS) {
-
-  switch (type) {
-    case AVAILABLE_LIGHTS.SUNLIGHT:
-      const { light, helper } = addDirectionalLight(EDITOR_STATE.pointerTarget.position);
-      updateSceneContent();
-      selectObjectWithHelpers(light, helper);
-      break;
-    case AVAILABLE_LIGHTS.LIGHT_BULB:
-      light = new THREE.PointLight(0xffffff, 1, 100);
-      light.position.set(0, 10, 0);
-      EDITOR_STATE.scene.add(light);
-      break;
-    case AVAILABLE_LIGHTS.SPOT:
-      light = new THREE.SpotLight(0xffffff, 1, 100);
-      light.position.set(0, 10, 0);
-      EDITOR_STATE.scene.add(light);
-      break;
-    case AVAILABLE_LIGHTS.SPOT_LIGHTS:
-      light = new THREE.SpotLight(0xffffff, 1, 100);
-      light.position.set(0, 10, 0);
-      EDITOR_STATE.scene.add(light);
-      break;
-  }
-
-}
-
-function createHelperPicker(light: THREE.Light, helper: THREE.Object3D) {
-  const picker = new THREE.Mesh(geometry, material);
-  picker.material.color.setHex(0xff0000);
-  picker.userData = { isTargetHelper: true, target: light, helper };
-  return picker;
 }

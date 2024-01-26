@@ -1,11 +1,13 @@
 import * as THREE from "three";
-import { addShape, SHAPE_ICON, AVAILABLE_SHAPES, disableClickToAddShape, enableClickToAddShape } from "./shape";
+import { SHAPE_ICON, AVAILABLE_SHAPES } from "./shape";
+import { LIGHTS_ICON, AVAILABLE_LIGHTS } from "./light";
+import { disableClickToAddObject, enableClickToAddObject, } from "./objectCreator.helper";
 import { EDITOR_STATE } from "./state";
-import { getNormilizedMousePosition } from "./helpers";
 
 export enum AVAILABLE_TOOLS {
   SELECT = 'SELECT',
   ADD_SHAPE = 'ADD_SHAPE',
+  ADD_LIGHT = 'ADD_LIGHT',
   MOVE = 'MOVE',
   ROTATE = 'ROTATE',
   SCALE = 'SCALE',
@@ -21,9 +23,32 @@ export enum TOOL_ICONS {
 
 const ARROW_ICON = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="currentColor" d="M7.41 8.58L12 13.17l4.59-4.59L18 10l-6 6l-6-6z"/></svg>';
 
-export const MENU = [
+type ButtonMenuItem = {
+  type: 'button';
+  tool: AVAILABLE_TOOLS;
+  icon: TOOL_ICONS;
+  action: Function;
+};
+
+type SelectMenuItem = {
+  type: 'select';
+  tool: AVAILABLE_TOOLS;
+  icon: SHAPE_ICON | string;
+  options: AVAILABLE_SHAPES[] | AVAILABLE_LIGHTS[];
+  action: (shape: AVAILABLE_SHAPES) => void;
+};
+
+type DividerMenuItem = {
+  type: 'divider';
+};
+
+type MenuItem = ButtonMenuItem | SelectMenuItem | DividerMenuItem;
+
+export const MENU: MenuItem[] = [
   { type: 'button', tool: AVAILABLE_TOOLS.SELECT, icon: TOOL_ICONS.SELECT, action: () => { } },
   { type: 'select', tool: AVAILABLE_TOOLS.ADD_SHAPE, icon: SHAPE_ICON[AVAILABLE_SHAPES.CUBE], options: Object.values(AVAILABLE_SHAPES), action: enablePointerMode },
+  { type: 'select', tool: AVAILABLE_TOOLS.ADD_LIGHT, icon: LIGHTS_ICON[AVAILABLE_LIGHTS.SUNLIGHT], options: Object.values(AVAILABLE_LIGHTS), action: enablePointerMode },
+  { type: 'divider' },
   { type: 'button', tool: AVAILABLE_TOOLS.MOVE, icon: TOOL_ICONS.MOVE, action: setTransformControlMode },
   { type: 'button', tool: AVAILABLE_TOOLS.ROTATE, icon: TOOL_ICONS.ROTATE, action: setTransformControlMode },
   { type: 'button', tool: AVAILABLE_TOOLS.SCALE, icon: TOOL_ICONS.SCALE, action: setTransformControlMode },
@@ -38,14 +63,18 @@ export function initMenu(container: Element) {
   const menuCtn = getMenuCointainer();
   MENU.forEach((menu) => {
     const item = createMenuItem(menu);
-    if (menu.tool === AVAILABLE_TOOLS.SELECT) {
-      item.classList.add('active');
+    if (menu.type === 'divider') {
+      menuCtn?.appendChild(item);
+    } else {
+      if (menu.tool === AVAILABLE_TOOLS.SELECT) {
+        item.classList.add('active');
+      }
+      item.querySelector('button')?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        setSelectedTool(menu.tool, menu.action);
+      });
+      menuCtn?.appendChild(item);
     }
-    item.querySelector('button')?.addEventListener('click', (e) => {
-      e.stopPropagation();
-      setSelectedTool(menu.tool, menu.action);
-    });
-    menuCtn?.appendChild(item);
   });
 }
 
@@ -58,34 +87,38 @@ export function setSelectedTool(tool: AVAILABLE_TOOLS, executeAction: Function =
   const item = menuCtn?.querySelector(`[data-tool="${tool}"]`);
   item?.classList.add('active');
 
-  executeAction(tool);
-
   if ([AVAILABLE_TOOLS.MOVE, AVAILABLE_TOOLS.ROTATE, AVAILABLE_TOOLS.SCALE].includes(tool) && EDITOR_STATE.selectedObject) {
     EDITOR_STATE.transformControl.attach(EDITOR_STATE.selectedObject);
   } else {
     EDITOR_STATE.transformControl.detach();
   }
-  if (tool !== AVAILABLE_TOOLS.ADD_SHAPE) {
+  if (![AVAILABLE_TOOLS.ADD_SHAPE, AVAILABLE_TOOLS.ADD_LIGHT].includes(tool)) {
     disablePointerMode();
   }
 
   EDITOR_STATE.selectedTool = tool;
+
+  executeAction(tool);
 }
 
-function createMenuItem({ tool, icon, type, options, action }: { tool: AVAILABLE_TOOLS, icon: string, type: string, options?: string[], action: Function }) {
+function createMenuItem(menuItem: MenuItem) {
   const item = document.createElement('li');
-  item.dataset.tool = tool;
-  if (type === 'button') {
+  if (menuItem.type === 'divider') {
+    item.classList.add('border-l', 'border-gray-200', 'my-2');
+    return item;
+  }
+  item.dataset.tool = menuItem.tool;
+  if (menuItem.type === 'button') {
     const button = document.createElement('button');
-    button.setAttribute('title', tool.toString());
-    setMenuIcon(button, icon);
+    button.setAttribute('title', menuItem.tool.toString());
+    setMenuIcon(button, menuItem.icon);
     item.appendChild(button);
-  } else if (type === 'select') {
+  } else if (menuItem.type === 'select') {
     item.classList.add('relative', 'flex', 'items-center', 'justify-between');
-    item.setAttribute('title', tool.toString());
+    item.setAttribute('title', menuItem.tool.toString());
 
     const selected = document.createElement('button');
-    setMenuIcon(selected, icon);
+    setMenuIcon(selected, menuItem.icon);
 
     const arrow = document.createElement('span');
     arrow.innerHTML = ARROW_ICON
@@ -93,20 +126,33 @@ function createMenuItem({ tool, icon, type, options, action }: { tool: AVAILABLE
 
     const dropdown = document.createElement('ul');
     dropdown.classList.add('absolute', 'top-7', 'left-0', 'hidden', 'bg-white', 'shadow', 'rounded', 'w-full', 'mt-2', 'py-2', 'z-10', 'space-y-1');
-    options?.forEach((shape) => {
+    menuItem.options?.forEach((shape) => {
       const option = document.createElement('li');
       option.classList.add('text-gray-700', 'hover:bg-gray-200', 'hover:text-gray-900', 'cursor-pointer', 'flex', 'items-center', 'justify-center', 'px-2', 'py-1')
 
-      setMenuIcon(option, SHAPE_ICON[shape])
-      dropdown.appendChild(option);
+      if (menuItem.tool === AVAILABLE_TOOLS.ADD_LIGHT) {
+        setMenuIcon(option, LIGHTS_ICON[shape])
+        dropdown.appendChild(option);
 
-      option.addEventListener('click', () => {
-        EDITOR_STATE.selectedShape = AVAILABLE_SHAPES[shape];
-        setMenuIcon(selected, SHAPE_ICON[EDITOR_STATE.selectedShape]);
-        setSelectedTool(AVAILABLE_TOOLS.ADD_SHAPE, action);
+        option.addEventListener('click', () => {
+          EDITOR_STATE.selectedLight = AVAILABLE_LIGHTS[shape];
+          setMenuIcon(selected, LIGHTS_ICON[EDITOR_STATE.selectedLight]);
+          setSelectedTool(AVAILABLE_TOOLS.ADD_LIGHT, menuItem.action);
 
-        dropdown.classList.toggle('hidden');
-      },);
+          dropdown.classList.toggle('hidden');
+        });
+      } else if (menuItem.tool === AVAILABLE_TOOLS.ADD_SHAPE) {
+        setMenuIcon(option, SHAPE_ICON[shape])
+        dropdown.appendChild(option);
+
+        option.addEventListener('click', () => {
+          EDITOR_STATE.selectedShape = AVAILABLE_SHAPES[shape];
+          setMenuIcon(selected, SHAPE_ICON[EDITOR_STATE.selectedShape]);
+          setSelectedTool(AVAILABLE_TOOLS.ADD_SHAPE, menuItem.action);
+
+          dropdown.classList.toggle('hidden');
+        });
+      }
     });
 
     arrow.addEventListener('click', () => {
@@ -144,12 +190,11 @@ function getMenuCointainer() {
 }
 
 function enablePointerMode() {
-
   EDITOR_STATE.pointerTarget.userData.enabled = true;
-  enableClickToAddShape();
+  enableClickToAddObject()
 }
 
 function disablePointerMode() {
   EDITOR_STATE.pointerTarget.userData.enabled = false;
-  disableClickToAddShape();
+  disableClickToAddObject();
 }
