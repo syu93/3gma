@@ -97,6 +97,7 @@ export function initObjectSelection() {
         selectableObjects.push(child);
       }
     });
+    unselectObjectWithHelpers();
 
     const intersects = raycaster.intersectObjects(selectableObjects, false);
 
@@ -110,7 +111,6 @@ export function initObjectSelection() {
       }
     } else {
       unselectObject();
-      unselectObjectWithHelpers();
     }
   });
 }
