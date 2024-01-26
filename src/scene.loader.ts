@@ -12,18 +12,19 @@ type Vector3 = {
 }
 
 export type SerializedSceneItem = {
+  uuid: string,
   name: string,
   position: Vector3,
   rotation: Vector3,
   scale: Vector3,
   type: string,
-  userData: string
+  userData?: string
 }
 
 
 export function loadScene() {
-  getProjectScene((serializedScene) => {
-    deserialiseScene(serializedScene);
+  getProjectScene((serializedSceneItem) => {
+    deserialiseScene(serializedSceneItem);
     updateSceneContent();
   });
 }
@@ -35,9 +36,10 @@ export function syncScene() {
 
 function serialiseScene(): SerializedSceneItem[] {
   return EDITOR_STATE.sceneContent.map((item) => {
-    const { name, position, rotation, scale, type, userData } = item as EditorObject;
+    const { uuid, name, position, rotation, scale, type, userData } = item as EditorObject;
 
     return {
+      uuid,
       name,
       position: { x: position.x, y: position.y, z: position.z },
       rotation: { x: rotation.x, y: rotation.y, z: rotation.z },
@@ -45,7 +47,7 @@ function serialiseScene(): SerializedSceneItem[] {
       // @ts-ignore
       type: item?.geometry?.type ?? type,
       // materialType: item?.material?.type,
-      userData: JSON.stringify(userData)
+      // userData: JSON.stringify(userData)
     };
   })
 }
@@ -76,6 +78,10 @@ function deserialiseScene(serializedSceneItem: SerializedSceneItem) {
 
   objectItem.name = name;
   EDITOR_STATE.scene.add(objectItem);
+
+  if (EDITOR_STATE.sceneContent.findIndex((item) => item.uuid === serializedSceneItem.uuid) === -1) {
+    EDITOR_STATE.sceneContent.push(objectItem);
+  }
   if (helperItem) {
     EDITOR_STATE.sceneHelper.add(helperItem);
   }

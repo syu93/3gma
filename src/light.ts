@@ -2,6 +2,7 @@ import * as THREE from "three";
 import { selectObjectWithHelpers } from "./helpers";
 import { updateSceneContent } from "./sceneExplorer.sidebare";
 import { EDITOR_STATE } from "./state";
+import { syncScene } from "./scene.loader";
 
 
 const geometry = new THREE.SphereGeometry(2, 4, 2);
@@ -43,14 +44,20 @@ export function addDirectionalLight(position: THREE.Vector3 | null): { light: TH
 export function addLight() {
   const position = EDITOR_STATE.pointerTarget.position.clone();
   position.y = 5;
+
+  let lightObject;
+  let helperObject;
   switch (EDITOR_STATE.selectedLight) {
     case AVAILABLE_LIGHTS.SUNLIGHT:
       const { light, helper } = addDirectionalLight(position);
-      updateSceneContent();
-      selectObjectWithHelpers(light, helper);
+      lightObject = light;
+      helperObject = helper;
       break;
   }
 
+  EDITOR_STATE.sceneContent.push(lightObject);
+  syncScene();
+  selectObjectWithHelpers(lightObject, helperObject);
 }
 
 function createHelperPicker(light: THREE.Light, helper: THREE.Object3D) {
