@@ -37,10 +37,6 @@ export function addDirectionalLight(position: THREE.Vector3 | null): { light: TH
 
   light.userData = { picker };
 
-  EDITOR_STATE.sceneHelper.add(helper);
-
-  EDITOR_STATE.scene.add(light);
-
   return { light, helper };
 }
 

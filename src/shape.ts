@@ -4,6 +4,8 @@ import { HELPER_GROUP_NAME, get3DMousePosition, getMousePosition, getNormilizedM
 import { TransformControlsPlane } from "three/examples/jsm/controls/TransformControls";
 import { updateSceneContent } from "./sceneExplorer.sidebare";
 import { AVAILABLE_TOOLS } from "./menu";
+import { saveScene } from "./firebase";
+import { syncScene } from "./scene.loader";
 
 
 export enum AVAILABLE_SHAPES {
@@ -40,7 +42,6 @@ function createMesh(geometry: THREE.BufferGeometry, position: THREE.Vector3 | nu
   if (position) {
     mesh.position.copy(position.clone());
   }
-  EDITOR_STATE.scene.add(mesh);
 
   return mesh;
 }
@@ -82,6 +83,7 @@ export async function addShape() {
       selectedGeometry = addCylinder(EDITOR_STATE.pointerTarget.position);
       break;
   }
-  updateSceneContent();
+  EDITOR_STATE.sceneContent.push(selectedGeometry);
+  syncScene();
   selectObject(selectedGeometry);
 }

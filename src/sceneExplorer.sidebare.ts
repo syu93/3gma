@@ -55,10 +55,6 @@ export function updateSceneContent(save = true) {
         EDITOR_STATE.sceneList.appendChild(createSceneItem(item as EditorObject));
       });
   }
-
-  if (EDITOR_STATE.scene.children.length && save) {
-    saveScene(EDITOR_STATE.PROJECT_ID);
-  }
 }
 
 

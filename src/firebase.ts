@@ -7,6 +7,7 @@ import { getDatabase, ref, push, set, serverTimestamp, onChildAdded, onChildRemo
 import firebaseConfig from '../firebase.json';
 import { EDITOR_STATE } from './state';
 import { EditorObject } from './sceneExplorer.sidebare';
+import { SerializedSceneItem } from './scene.loader';
 
 initializeApp(firebaseConfig);
 
@@ -51,26 +52,15 @@ export function createProject(name: string) {
   });
 }
 
-export function saveScene(projectId) {
+export function saveScene(serializedScene: SerializedSceneItem[]) {
   const database = getDatabase();
-  const projectRef = ref(database, `projects/${projectId}/scene`);
-  set(projectRef, EDITOR_STATE.scene.children.map((item) => {
-    const { name, position, rotation, scale, type, userData } = item as EditorObject;
-    console.log(item);
-
-    return {
-      name,
-      position: { x: position.x, y: position.y, z: position.z },
-      rotation: { x: rotation.x, y: rotation.y, z: rotation.z },
-      scale: { x: scale.x, y: scale.y, z: scale.z },
-      type: item?.geometry?.type ?? type,
-    };
-  }));
+  const projectRef = ref(database, `projects/${EDITOR_STATE.PROJECT_ID}/scene`);
+  set(projectRef, serializedScene);
 }
 
-export function getProjectScene(projectId, callback) {
+export function getProjectScene(callback) {
   const database = getDatabase();
-  const projectRef = ref(database, `projects/${projectId}/scene`);
+  const projectRef = ref(database, `projects/${EDITOR_STATE.PROJECT_ID}/scene`);
   onChildAdded(projectRef, (snapshot) => {
     callback({
       id: snapshot.key,
@@ -79,19 +69,19 @@ export function getProjectScene(projectId, callback) {
   });
 }
 
-export function setPlayerPosition(projectId, position) {
+export function setPlayerPosition(position) {
   const user = auth.currentUser;
   if (!user) {
     return;
   }
   const database = getDatabase();
-  const projectRef = ref(database, `projects/${projectId}/player/${user.uid}`);
+  const projectRef = ref(database, `projects/${EDITOR_STATE.PROJECT_ID}/player/${user.uid}`);
   set(projectRef, position);
 }
 
-export function getPlayersPosition(projectId, callback) {
+export function getPlayersPosition(callback) {
   const database = getDatabase();
-  const projectRef = ref(database, `projects/${projectId}/player`);
+  const projectRef = ref(database, `projects/${EDITOR_STATE.PROJECT_ID}/player`);
   onChildChanged(projectRef, (snapshot) => {
     callback({
       id: snapshot.key,
