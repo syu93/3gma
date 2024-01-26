@@ -1,48 +1,36 @@
-import { getPlayersPosition, setPlayerPosition } from "./firebase";
+import { getPlayersPosition, getUser, setPlayerPosition } from "./firebase";
 import { get3DMousePosition, getMousePosition } from "./helpers";
 import { createTargetShape } from "./objectCreator.helper";
 import { EDITOR_STATE } from "./state";
 
 export function initPresence() {
-  const cursor = createTargetShape(generateRandomHexColor());
-
-  EDITOR_STATE.sceneHelper.add(cursor);
-
   document.addEventListener('mousemove', (event) => {
-    const { x, y } = getMousePosition(event);
-
-    const worldPosition = get3DMousePosition(event);
-
-    setPlayerPosition(EDITOR_STATE.PROJECT_ID, { x: worldPosition.x, z: worldPosition.z });
-
-    if (!worldPosition.x && !worldPosition.z) {
-      cursor.visible = false;
-    } else {
-      cursor.visible = true;
-      cursor.position.copy(worldPosition);
-    }
+    const { x, z } = get3DMousePosition(event);
+    setPlayerPosition({ x, z, color: generateRandomHexColor() });
   });
 
   displayPlayerPosition();
 }
 
-const playerMap = new Map();
-
 export function displayPlayerPosition() {
-  getPlayersPosition(EDITOR_STATE.PROJECT_ID, (players) => {
-    if (!playerMap.has(players.id)) {
-      console.log('add player');
-
-      const cursor = createTargetShape(generateRandomHexColor());
+  const playersMap = new Map();
+  getPlayersPosition((players) => {
+    const currentUser = getUser();
+    if (currentUser && players.id === currentUser.uid) {
+      return;
+    }
+    if (!playersMap.has(players.id)) {
+      const cursor = createTargetShape(players.color);
       cursor.visible = true;
       EDITOR_STATE.sceneHelper.add(cursor);
-      playerMap.set(players.id, cursor);
+      playersMap.set(players.id, cursor);
     }
+
     if (!players.x && !players.z) {
-      playerMap.get(players.id).visible = false;
+      playersMap.get(players.id).visible = false;
     } else {
-      playerMap.get(players.id).visible = true;
-      playerMap.get(players.id).position.set(players.x, 0, players.z);
+      playersMap.get(players.id).visible = true;
+      playersMap.get(players.id).position.set(players.x, 0, players.z);
     }
   });
 }

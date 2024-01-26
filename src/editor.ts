@@ -39,7 +39,7 @@ export function initEditor(container: Element, projectId: string) {
   EDITOR_STATE.sceneHelper.fog = new THREE.FogExp2(fogColor, 0.01);
 
   loadScene();
-  // initPresence();
+  initPresence();
 
   animate();
 }

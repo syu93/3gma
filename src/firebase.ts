@@ -69,14 +69,14 @@ export function getProjectScene(callback) {
   });
 }
 
-export function setPlayerPosition(position) {
+export function setPlayerPosition(positionAndColor) {
   const user = auth.currentUser;
   if (!user) {
     return;
   }
   const database = getDatabase();
   const projectRef = ref(database, `projects/${EDITOR_STATE.PROJECT_ID}/player/${user.uid}`);
-  set(projectRef, position);
+  set(projectRef, positionAndColor);
 }
 
 export function getPlayersPosition(callback) {
@@ -88,4 +88,8 @@ export function getPlayersPosition(callback) {
       ...snapshot.val()
     });
   });
+}
+
+export function getUser() {
+  return auth.currentUser;
 }
