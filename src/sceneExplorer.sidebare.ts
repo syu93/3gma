@@ -1,8 +1,10 @@
 import * as THREE from "three";
+import page from 'page';
 import { EDITOR_STATE } from "./state";
 import { HELPER_GROUP_NAME, selectObject, selectObjectWithHelpers, unselectObject } from "./helpers";
 import { SHAPE_ICON } from "./shape";
 import { AVAILABLE_LIGHTS, LIGHTS_ICON, } from "./light";
+import { saveScene } from "./firebase";
 
 export type EditorObject = THREE.Mesh<THREE.BufferGeometry, THREE.Material> | THREE.Group | THREE.Light;
 
@@ -42,7 +44,7 @@ export function getSidebarWidth(container: Element): number {
   return leftPanel.clientWidth ?? 0;
 }
 
-export function updateSceneContent() {
+export function updateSceneContent(save = true) {
   const sidebare = EDITOR_STATE.container?.querySelector('#sceneExplorer') as HTMLElement;
   EDITOR_STATE.sceneList = sidebare.querySelector('ul') as Element;
 
@@ -53,7 +55,12 @@ export function updateSceneContent() {
         EDITOR_STATE.sceneList.appendChild(createSceneItem(item as EditorObject));
       });
   }
+
+  if (EDITOR_STATE.scene.children.length && save) {
+    saveScene(EDITOR_STATE.PROJECT_ID);
+  }
 }
+
 
 export function selectItemInList(object: EditorObject) {
   unselectItemInList();

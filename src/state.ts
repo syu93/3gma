@@ -6,6 +6,7 @@ import { AVAILABLE_SHAPES } from "./shape";
 import { AVAILABLE_LIGHTS } from "./light";
 
 export const EDITOR_STATE = new Proxy(({
+  PROJECT_ID: undefined as unknown as string,
   transformControl: undefined as unknown as TransformControls,
   orbitControl: undefined as unknown as OrbitControls,
   scene: undefined as unknown as THREE.Scene,

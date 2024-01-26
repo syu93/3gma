@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html class="h-full bg-zinc-800" lang="en">
 
 <head>
   <meta charset="UTF-8">
@@ -89,6 +89,10 @@
         height: 5em;
       }
     }
+
+    [data-page] {
+      height: 100%;
+    }
   </style>
   <link rel="stylesheet" href="./src/assets/css/style.css">
 </head>
@@ -99,12 +103,97 @@
     <div id="loader" class="h-full flex items-center justify-center">
       <div class=" loader">Loading...</div>
     </div>
-    <main id="router">
+    <main id="router" class="h-full">
+      <!-- HOME -->
       <section data-page="home">
-        Home page
+        <div class="min-h-full bg-gray-100">
+          <div class="bg-gray-800 pb-32">
+            <nav class="bg-gray-800">
+              <div class="mx-auto max-w-7xl sm:px-6 lg:px-8">
+                <div class="border-b border-gray-700">
+                  <div class="flex h-16 items-center justify-between px-4 sm:px-0">
+                    <div class="flex items-center">
+                      <div class="flex-shrink-0">
+                        <img class="h-8 w-8" src="https://tailwindui.com/img/logos/mark.svg?color=indigo&shade=500"
+                          alt="Your Company">
+                      </div>
+                      <div class="hidden md:block">
+                        <div class="ml-10 flex items-baseline space-x-4">
+                          <!-- Current: "bg-gray-900 text-white", Default: "text-gray-300 hover:bg-gray-700 hover:text-white" -->
+                          <a href="#" class="bg-gray-900 text-white rounded-md px-3 py-2 text-sm font-medium"
+                            aria-current="page">Projects</a>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="hidden md:block">
+                      <div class="ml-4 flex items-center md:ml-6">
+                        <!-- Profile dropdown -->
+                        <div class="relative ml-3">
+                          <div>
+                            <button type="button"
+                              class="relative flex max-w-xs items-center rounded-full bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-gray-800"
+                              id="user-menu-button" aria-expanded="false" aria-haspopup="true">
+                              <span class="absolute -inset-1.5"></span>
+                              <span class="sr-only">Open user menu</span>
+                              <div class="h-8 w-8 rounded-full">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                                  <g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                                    stroke-width="2">
+                                    <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
+                                    <circle cx="12" cy="7" r="4" />
+                                  </g>
+                                </svg>
+                              </div>
+                            </button>
+                          </div>
+                          <div
+                            class="hidden absolute right-0 z-10 mt-2 w-48 origin-top-right rounded-md bg-white py-1 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
+                            role="menu" aria-orientation="vertical" aria-labelledby="user-menu-button" tabindex="-1">
+                            <!-- Active: "bg-gray-100", Not Active: "" -->
+                            <a href="#" class="block px-4 py-2 text-sm text-gray-700" role="menuitem" tabindex="-1"
+                              id="user-menu-item-0">Your Profile</a>
+                            <a href="#" class="block px-4 py-2 text-sm text-gray-700" role="menuitem" tabindex="-1"
+                              id="user-menu-item-1">Settings</a>
+                            <a href="#" class="block px-4 py-2 text-sm text-gray-700" role="menuitem" tabindex="-1"
+                              id="user-menu-item-2">Sign out</a>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </nav>
+            <header class="py-10">
+              <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+                <h1 class="text-3xl font-bold tracking-tight text-white">Projects</h1>
+              </div>
+            </header>
+          </div>
 
-        <a href="/editor/123456">Start create</a>
+          <main class="-mt-32">
+            <div class="mx-auto max-w-7xl px-4 pb-12 sm:px-6 lg:px-8">
+              <div id="projectContainer" class="rounded-lg bg-white px-5 py-6 shadow sm:px-6">
+                <ul class="flex flex-wrap gap-4 max-w-6xl inset-bloc text-zinc-800">
+                  <li class="w-1/5 aspect-video rounded-md shadow-md overflow-hidden border-2 border-zinc-800">
+                    <button id="newProject" class="flex w-full h-full items-center justify-center">
+                      <svg class="w-8 aspect-square" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                        <g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                          stroke-width="2">
+                          <circle cx="12" cy="12" r="10" />
+                          <path d="M8 12h8m-4-4v8" />
+                        </g>
+                      </svg>
+                    </button>
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </main>
+        </div>
+
       </section>
+      <!-- EDITOR -->
       <section data-page="editor" class="relative">
         <menu
           class="absolute top-0 left-1/2 -translate-x-1/2 flex flex-col items-center text-white bg-gray-700 shadow-xl px-2 py-2 rounded-b-md transition-all duration-100">
@@ -135,6 +224,7 @@
           <div class="viewHelper rounded-full hover:bg-gray-700 hover:bg-opacity-10"></div>
         </main>
       </section>
+      <!-- LOGIN -->
       <section data-page="login">
         <h1>Login</h1>
         <form>
@@ -144,6 +234,7 @@
     </main>
   </section>
   <script type="module" src="./src/main.ts"></script>
+  <script type="module" src="/src/home.ts"></script>
 </body>
 
 </html>

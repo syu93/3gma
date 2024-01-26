@@ -3,9 +3,13 @@ import { EDITOR_STATE } from './state';
 import { addHelpers, initObjectSelection } from './helpers';
 import { initMenu } from './menu';
 import { addDirectionalLight } from './light';
-import { getSidebarWidth, initSceneExplorer, updateSceneContent } from './sceneExplorer.sidebare';
+import { EditorObject, getSidebarWidth, initSceneExplorer, updateSceneContent } from './sceneExplorer.sidebare';
+import { getProjectScene } from './firebase';
+import { addCube } from './shape';
+import { initPresence } from './collaborator';
 
-export function initEditor(container: Element) {
+export function initEditor(container: Element, projectId: string) {
+  EDITOR_STATE.PROJECT_ID = projectId;
   EDITOR_STATE.scene = new THREE.Scene();
 
   const leftPanelWidth = getSidebarWidth(container);
@@ -34,6 +38,7 @@ export function initEditor(container: Element) {
   EDITOR_STATE.sceneHelper.fog = new THREE.FogExp2(fogColor, 0.01);
 
   loadScene();
+  initPresence();
   updateSceneContent();
 
   animate();
@@ -77,5 +82,20 @@ function onWindowResize() {
 }
 
 function loadScene() {
-  addDirectionalLight(new THREE.Vector3(5, 5, 0));
+  // addDirectionalLight(new THREE.Vector3(5, 5, 0));
+  getProjectScene(EDITOR_STATE.PROJECT_ID, (object) => {
+    const { name, position, rotation, scale, type, userData } = object as EditorObject;
+    const { x, y, z } = position;
+    const pos = new THREE.Vector3(x, y, z);
+    switch (object.type) {
+      case 'DirectionalLight':
+        addDirectionalLight(pos);
+        break;
+      case 'BoxGeometry':
+        addCube(pos);
+        break;
+    }
+
+    updateSceneContent(false);
+  });
 }

@@ -2,6 +2,7 @@ import page, { Context } from 'page';
 import { auth, loginWithGoogle } from './firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import { initEditor } from './editor';
+import { initHomePage } from './home';
 
 const app = document.querySelector('#app');
 const router = app?.querySelector('#router');
@@ -52,11 +53,13 @@ page('*', async (ctx: Context, next) => {
 
 page(ROUTES.HOME, (ctx) => {
   displayPage('home');
+  initHomePage();
 });
 
 page(ROUTES.EDITOR, (ctx) => {
+  ctx.params.projectId;
   const page = displayPage('editor');
-  initEditor(page);
+  initEditor(page, ctx.params.projectId);
 });
 
 page(ROUTES.LOGIN, (ctx) => {

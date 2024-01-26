@@ -8,7 +8,7 @@ import { EDITOR_STATE } from "./state";
 const onDownPosition = new THREE.Vector2();
 const onUpPosition = new THREE.Vector2();
 
-export function createTargetShape() {
+export function createTargetShape(color = 0xFFF000) {
   const group = new THREE.Group();
   // Circle parameters
   const circleRadius = 3;
@@ -17,7 +17,7 @@ export function createTargetShape() {
   // Create circle boundary
   const circleGeometry = new THREE.CircleGeometry(circleRadius, circleSegments);
   circleGeometry.rotateX(Math.PI / 2);
-  const circleMaterial = new THREE.MeshBasicMaterial({ color: 0xFFF000, side: THREE.DoubleSide, wireframe: true, transparent: true, opacity: 0.08 });
+  const circleMaterial = new THREE.MeshBasicMaterial({ color: color, side: THREE.DoubleSide, wireframe: true, transparent: true, opacity: 0.08 });
   const circle = new THREE.Mesh(circleGeometry, circleMaterial);
   group.add(circle);
 
@@ -43,7 +43,7 @@ export function removeTargetTracking() {
   document.removeEventListener('mousemove', trackMouse);
 }
 
-function trackMouse(event) {
+export function trackMouse(event) {
   const worldPosition = get3DMousePosition(event);
   if (!worldPosition.x && !worldPosition.z) {
     EDITOR_STATE.pointerTarget.visible = false;
