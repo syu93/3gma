@@ -24,8 +24,20 @@ export type SerializedSceneItem = {
 
 export function loadScene() {
   getProjectScene((serializedSceneItem) => {
-    deserialiseScene(serializedSceneItem);
-    updateSceneContent();
+    if (serializedSceneItem.eventType === 'child_added') {
+      deserialiseScene(serializedSceneItem);
+      updateSceneContent();
+    } else if (serializedSceneItem.eventType === 'child_changed') {
+      const { uuid, name, position, rotation, scale } = serializedSceneItem;
+
+      const object = EDITOR_STATE.scene.children.find(item => item.uuid === uuid) as EditorObject;
+      if (object) {
+        object.name = name;
+        object.position.set(position.x, position.y, position.z);
+        object.rotation.set(rotation.x, rotation.y, rotation.z);
+        object.scale.set(scale.x, scale.y, scale.z);
+      }
+    }
   });
 }
 
@@ -35,7 +47,7 @@ export function syncScene() {
 }
 
 function serialiseScene(): SerializedSceneItem[] {
-  return EDITOR_STATE.sceneContent.map((item) => {
+  return EDITOR_STATE.scene.children.map((item) => {
     const { uuid, name, position, rotation, scale, type, userData } = item as EditorObject;
 
     return {
@@ -53,7 +65,7 @@ function serialiseScene(): SerializedSceneItem[] {
 }
 
 function deserialiseScene(serializedSceneItem: SerializedSceneItem) {
-  const { name, position, rotation, scale, type, userData } = serializedSceneItem;
+  const { uuid, name, position, rotation, scale, type, userData } = serializedSceneItem;
   const { x, y, z } = position;
   const vectorePosition = new THREE.Vector3(x, y, z);
 
@@ -77,10 +89,13 @@ function deserialiseScene(serializedSceneItem: SerializedSceneItem) {
   }
 
   objectItem.name = name;
-  EDITOR_STATE.scene.add(objectItem);
+  objectItem.uuid = serializedSceneItem.uuid;
+  objectItem.rotation.set(rotation.x, rotation.y, rotation.z);
+  objectItem.scale.set(scale.x, scale.y, scale.z);
 
-  if (EDITOR_STATE.sceneContent.findIndex((item) => item.uuid === serializedSceneItem.uuid) === -1) {
-    EDITOR_STATE.sceneContent.push(objectItem);
+  const object = EDITOR_STATE.scene.children.find(item => item.uuid === uuid) as EditorObject;
+  if (!object) {
+    EDITOR_STATE.scene.add(objectItem);
   }
   if (helperItem) {
     EDITOR_STATE.sceneHelper.add(helperItem);

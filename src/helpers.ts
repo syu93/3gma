@@ -6,6 +6,7 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import { TransformControls } from 'three/examples/jsm/controls/TransformControls';
 import { EditorObject, selectItemInList, unselectItemInList } from './sceneExplorer.sidebare';
 import { addTargetTracking, createTargetShape } from './objectCreator.helper';
+import { syncScene } from './scene.loader';
 
 export const targetPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
 const mousePosition = new THREE.Vector2(0, 0);
@@ -76,6 +77,11 @@ export function initObjectSelection() {
     const { x, y } = getNormilizedMousePosition(event);
     mousePosition.x = x;
     mousePosition.y = y;
+
+    if (EDITOR_STATE.selectedObject && [AVAILABLE_TOOLS.MOVE, AVAILABLE_TOOLS.ROTATE, AVAILABLE_TOOLS.SCALE].includes(EDITOR_STATE.selectedTool)) {
+      syncScene();
+    }
+
   });
 
   EDITOR_STATE.renderer.domElement.addEventListener('mousedown', (event) => {

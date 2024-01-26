@@ -63,6 +63,14 @@ export function getProjectScene(callback) {
   const projectRef = ref(database, `projects/${EDITOR_STATE.PROJECT_ID}/scene`);
   onChildAdded(projectRef, (snapshot) => {
     callback({
+      eventType: 'child_added',
+      id: snapshot.key,
+      ...snapshot.val()
+    });
+  });
+  onChildChanged(projectRef, (snapshot) => {
+    callback({
+      eventType: 'child_changed',
       id: snapshot.key,
       ...snapshot.val()
     });

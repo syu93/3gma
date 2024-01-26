@@ -55,7 +55,7 @@ export function addLight() {
       break;
   }
 
-  EDITOR_STATE.sceneContent.push(lightObject);
+  EDITOR_STATE.scene.add(lightObject);
   syncScene();
   selectObjectWithHelpers(lightObject, helperObject);
 }

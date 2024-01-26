@@ -83,7 +83,7 @@ export async function addShape() {
       selectedGeometry = addCylinder(EDITOR_STATE.pointerTarget.position);
       break;
   }
-  EDITOR_STATE.sceneContent.push(selectedGeometry);
+  EDITOR_STATE.scene.add(selectedGeometry);
   syncScene();
   selectObject(selectedGeometry);
 }
