@@ -9,7 +9,7 @@ const material = new THREE.MeshBasicMaterial({ color: 0xff0000, visible: false }
 
 export enum AVAILABLE_LIGHTS {
   SUNLIGHT = 'SUNLIGHT',
-  LIGHT_BULB = 'LIGHT_BULB',
+  // LIGHT_BULB = 'LIGHT_BULB',
   // SPOT = 'SPOT',
   // SPOT_LIGHTS = 'SPOT_LIGHTS'
 }

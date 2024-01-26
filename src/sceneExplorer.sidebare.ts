@@ -160,7 +160,7 @@ function getMeshName(object: EditorObject) {
     case 'CylinderGeometry':
       return 'Cylinder';
     default:
-      return object.geometry.type;
+      return (object as THREE.Mesh).geometry.type;
   }
 }
 
